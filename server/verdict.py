@@ -91,17 +91,50 @@ def compare(pred, row):
     }
 
 
+imprint_faces = None
+
+
+def unique_imprint(ocr, catalog):
+    # 읽은 각인(4글자 이상)이 DB에서 딱 한 약과만 맞으면 그 약을 돌려준다
+    global imprint_faces
+    if imprint_faces is None:
+        imprint_faces = [(item, text.translate(LOOKALIKE)) for item, row in catalog.items()
+                         for text in (read_face(row, "front")[0], read_face(row, "back")[0]) if len(text) >= 4]
+    q = norm(ocr).translate(LOOKALIKE)
+    if len(q) < 4:
+        return None
+    hits = {item for item, text in imprint_faces
+            if abs(len(text) - len(q)) <= len(q) // 10 and 1 - edit_distance(q, text) / max(len(q), len(text)) >= 0.9}
+    return hits.pop() if len(hits) == 1 else None
+
+
 def judge(pred, catalog, rx_items, bbox_ok=True):
     if not bbox_ok:
         return "판단 보류", "알약 위치를 찾지 못함", [], []
 
     search = pred["search"]
-    top = [{"item": c["item"], "name": c["name"], "score": round(c["score"], 4),
-            "in_rx": c["item"] in rx_items, "match": compare(pred, catalog[c["item"]])}
-           for c in search["candidates"]]
+    scores = {c["item"]: round(c["score"], 4) for c in search["candidates"]}
+    order = [c["item"] for c in search["candidates"]]
+    # 각인이 한 약을 가리키면 색·모양 점수보다 각인을 믿는다 (실제 사진은 조명 때문에 색이 자주 틀림)
+    only = unique_imprint(pred["ocr"]["text"], catalog)
+    if only:
+        order = [only] + [i for i in order if i != only][:len(order) - 1]
+    top = [{"item": i, "name": catalog[i]["name"], "score": scores.get(i),
+            "in_rx": i in rx_items, "match": compare(pred, catalog[i])}
+           for i in order]
     first = top[0]
     rx_found = ", ".join(t["name"] for t in top if t["in_rx"])
     reasons = []
+
+    if only:
+        reasons.append(f"각인 '{norm(pred['ocr']['text'])}'이(가) DB에서 [{first['name']}] 하나와만 일치")
+        wrong = [ATTR_NAME[k] for k in ("color", "shape", "line") if not first["match"][k]["ok"]]
+        if wrong:
+            reasons.append(", ".join(wrong) + "은(는) DB와 다르게 읽힘 (조명·배경 영향일 수 있음)")
+        if first["in_rx"]:
+            return "일치 후보", f"처방약 [{first['name']}]과 일치", reasons, top
+        reasons.append(f"[{first['name']}]은 오늘 처방에 없음")
+        return "불일치 의심", "처방에 없는 약으로 보임", reasons, top
 
     if search["withheld"]:
         msg = f"1·2순위 점수 차 {search['score_margin']:.3f} < 기준 {search['margin_threshold']:.3f}"
