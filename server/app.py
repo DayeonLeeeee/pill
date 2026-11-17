@@ -27,6 +27,7 @@ KST = timezone(timedelta(hours=9))
 
 sys.path.insert(0, str(BUNDLE))
 from autobbox import find_pill  # noqa: E402
+from ocr_rotation import use_max_score  # noqa: E402
 from verdict import judge  # noqa: E402
 
 config = json.loads((HERE / "demo_config.json").read_text("utf8"))
@@ -44,6 +45,7 @@ def load_model():
     try:
         from pill_models import PillRecognizer
         m = PillRecognizer(BUNDLE, device=os.environ.get("DEVICE", "auto"), threads=int(os.environ.get("TORCH_THREADS", 2)))
+        use_max_score(m)
         # 첫 요청이 느리지 않게 한 번 돌려 둔다 (DB 검색도 이때 로드됨)
         ex = json.loads((BUNDLE / "examples/inputs.json").read_text("utf8"))[0]
         m.predict(BUNDLE / "examples" / ex["image"], bbox=ex["bbox"], search=True)
