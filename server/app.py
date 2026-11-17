@@ -151,7 +151,7 @@ def get_image(image_id: str):
 
 def run_model(path, bbox):
     with model_lock:
-        pred = model.predict(path, bbox=bbox, search=True, top_k=5)
+        pred = model.predict(path, bbox=bbox, search=True, top_k=len(catalog))  # 전체 순위 (각인으로 끌어올린 약의 점수도 보이게)
         pred["ocr"]["agreeing_angles"] = model.ocr_reader.last["agreeing_angles"]
         return pred
 
