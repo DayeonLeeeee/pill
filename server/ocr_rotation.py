@@ -12,6 +12,8 @@ from pill_models.ocr.data import tensor
 from pill_models.ocr.model import Tokenizer
 from pill_models.ocr.portable_data import amp_context
 from pill_models.ocr.tta import options_for
+from pill_models.search import edit_distance
+from verdict import norm
 
 
 @torch.inference_mode()
@@ -30,8 +32,13 @@ def read_best(self, path, bbox):
         r["view"] = "whole"
     reads = roi_reads + whole_reads
     best = max(reads, key=lambda r: r["score"])
-    return {"text": best["text"], "raw_sequence_score": best["score"], "angle": best["angle"], "view": best["view"],
-            "candidates": [{k: r[k] for k in ("text", "score", "angle", "view")} for r in reads]}
+    # 다른 각도에서도 비슷하게 읽혔는지 (한 각도에서만 나온 높은 점수는 지어낸 글자일 수 있음)
+    q = norm(best["text"])
+    agree = {r["angle"] for r in reads if q and 1 - edit_distance(q, norm(r["text"])) / max(len(q), len(norm(r["text"])), 1) >= 0.8}
+    self.last = {"text": best["text"], "raw_sequence_score": best["score"], "angle": best["angle"], "view": best["view"],
+                 "agreeing_angles": len(agree),
+                 "candidates": [{k: r[k] for k in ("text", "score", "angle", "view")} for r in reads]}
+    return self.last
 
 
 def use_max_score(model):

@@ -151,7 +151,9 @@ def get_image(image_id: str):
 
 def run_model(path, bbox):
     with model_lock:
-        return model.predict(path, bbox=bbox, search=True, top_k=5)
+        pred = model.predict(path, bbox=bbox, search=True, top_k=5)
+        pred["ocr"]["agreeing_angles"] = model.ocr_reader.last["agreeing_angles"]
+        return pred
 
 
 @app.post("/api/predict")
