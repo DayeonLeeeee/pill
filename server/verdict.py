@@ -129,21 +129,31 @@ def attr_scores(pred, row, face):
     return round(color, 2), round(line, 2), round(shape, 2)
 
 
-def imprint_first(pred, catalog):
-    """각인으로 거른 뒤 색 -> 분할선 -> 모양 순으로 고른다. OCR을 못 믿을 땐 None (기존 점수 검색 사용)."""
-    q = norm(pred["ocr"]["text"])
-    if not q or pred["ocr"].get("agreeing_angles", 0) < 2:
-        return None
-    # 거를 때는 너그러운 비교(일부 포함, 빈 면 허용)를 쓰지 않고 글자 편집거리만 본다
+def imprint_candidates(q, catalog):
+    # 편집거리로 비교. 빈 면은 보지 않는다.
+    # DB 각인이 실제보다 짧게 적힌 경우가 있어서(예: 실제 GS 5YZ 300, DB엔 GS5YZ) 4글자 이상이 통째로
+    # 들어 있으면 0.85를 준다. 완전히 맞는 약(1.0)이 있으면 0.85는 거르는 범위(최고 -0.1) 밖이라 끼지 않는다.
     a = q.translate(LOOKALIKE)
     sims = {}
     for item, row in catalog.items():
         for side in ("front", "back"):
             ref = read_face(row, side)[0].translate(LOOKALIKE)
-            if ref:
-                s = 1 - edit_distance(a, ref) / max(len(a), len(ref))
-                if s > sims.get(item, (-1, ""))[0]:
-                    sims[item] = (s, side)
+            if not ref:
+                continue
+            s = 1 - edit_distance(a, ref) / max(len(a), len(ref))
+            if min(len(a), len(ref)) >= 4 and (ref in a or a in ref):
+                s = max(s, 0.85)
+            if s > sims.get(item, (-1, ""))[0]:
+                sims[item] = (s, side)
+    return sims
+
+
+def imprint_first(pred, catalog):
+    """각인으로 거른 뒤 색 -> 분할선 -> 모양 순으로 고른다. OCR을 못 믿을 땐 None (기존 점수 검색 사용)."""
+    q = norm(pred["ocr"]["text"])
+    if not q or pred["ocr"].get("agreeing_angles", 0) < 2:
+        return None
+    sims = imprint_candidates(q, catalog)
     best = max(s for s, _ in sims.values())
     if best < 0.6:
         return None
