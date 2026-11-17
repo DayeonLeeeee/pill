@@ -261,4 +261,13 @@ def demo_image(i: int):
     return FileResponse(BUNDLE / config["stage_cases"][i]["example_image"])
 
 
+@app.middleware("http")
+async def no_cache(request, call_next):
+    # 화면 파일을 브라우저가 예전 것으로 들고 있지 않게 (서버만 새 버전이면 화면이 깨짐)
+    response = await call_next(request)
+    if not request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 app.mount("/", StaticFiles(directory=HERE / "static", html=True))
