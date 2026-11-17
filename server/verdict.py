@@ -117,6 +117,9 @@ def judge(pred, catalog, rx_items, bbox_ok=True):
     order = [c["item"] for c in search["candidates"]]
     # 각인이 한 약을 가리키면 색·모양 점수보다 각인을 믿는다 (실제 사진은 조명 때문에 색이 자주 틀림)
     only = unique_imprint(pred["ocr"]["text"], catalog)
+    # OCR이 그럴듯한 각인을 지어내는 경우가 있어서, 두 각도 이상에서 비슷하게 읽히고 모양도 맞을 때만 믿는다
+    if only and (pred["ocr"].get("agreeing_angles", 0) < 2 or pred["shape"]["label"] != catalog[only]["drug_shape"]):
+        only = None
     if only:
         order = [only] + [i for i in order if i != only][:len(order) - 1]
     top = [{"item": i, "name": catalog[i]["name"], "score": scores.get(i),
