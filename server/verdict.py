@@ -201,7 +201,12 @@ def judge(pred, catalog, rx_items, bbox_ok=True):
                     reasons.append("후보 중 처방약: " + ", ".join(t["name"] for t in top if t["in_rx"]))
                 return "판단 보류", "후보끼리 구분이 어려움", reasons, top
             reasons.append(f"{attr_confidence(pred)[diff][0]}(으)로 1순위 결정 (2순위 [{catalog[second]['name']}])")
-        wrong = [ATTR_NAME[k] for k in ("color", "shape", "line") if not first["match"][k]["ok"]]
+        # 모양은 실제 사진에서도 잘 맞는다. 각인이 가리킨 약과 모양이 다르면 각인을 잘못 읽었을 가능성이 크다
+        shape = first["match"]["shape"]
+        if not shape["ok"] and pred["shape"]["confidence"] >= CONF_MIN:
+            reasons.append(f"그런데 모양이 다름 (사진 {shape['pred']}, DB {shape['catalog']}) - 각인을 잘못 읽었을 수 있음")
+            return "판단 보류", "각인과 모양이 맞지 않음", reasons, top
+        wrong = [ATTR_NAME[k] for k in ("color", "line") if not first["match"][k]["ok"]]
         if wrong:
             reasons.append(", ".join(wrong) + "은(는) DB와 다르게 읽힘 (조명·배경 영향일 수 있음)")
         if first["in_rx"]:
