@@ -376,7 +376,7 @@ function resultHTML(r) {
       return `<tr>
         <td>${i + 1}</td>
         <td>${esc(t.name)}${t.in_rx ? '<span class="tag">처방</span>' : ''}</td>
-        <td>${t.score == null ? '-' : t.score.toFixed(3)}</td>
+        <td>${t.score.toFixed(3)}${t.rank > i + 1 ? `<br><small>(${t.rank}위)</small>` : ''}</td>
         <td>${mark(m.color.ok)}</td><td>${mark(m.shape.ok)}</td><td>${mark(m.line.ok)}</td>
         <td title="DB 각인: ${esc(dbImprint)}">${mark(m.imprint.ok)}</td>
       </tr>`;

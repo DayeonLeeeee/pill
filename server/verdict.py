@@ -5,6 +5,7 @@ import re
 from pill_models.labels import COLORS
 from pill_models.search import edit_distance
 
+TOP_K = 5
 IMPRINT_MIN = 0.5  # 임시값. 검증셋으로 다시 정할 것
 
 # DB 각인 정답에 섞여 있는 설명어
@@ -113,8 +114,8 @@ def judge(pred, catalog, rx_items, bbox_ok=True):
         return "판단 보류", "알약 위치를 찾지 못함", [], []
 
     search = pred["search"]
-    scores = {c["item"]: round(c["score"], 4) for c in search["candidates"]}
-    order = [c["item"] for c in search["candidates"]]
+    ranks = {c["item"]: (n, round(c["score"], 4)) for n, c in enumerate(search["candidates"], 1)}
+    order = [c["item"] for c in search["candidates"][:TOP_K]]
     # 각인이 한 약을 가리키면 색·모양 점수보다 각인을 믿는다 (실제 사진은 조명 때문에 색이 자주 틀림)
     only = unique_imprint(pred["ocr"]["text"], catalog)
     # OCR이 그럴듯한 각인을 지어내는 경우가 있어서, 두 각도 이상에서 비슷하게 읽히고 모양도 맞을 때만 믿는다
@@ -122,7 +123,7 @@ def judge(pred, catalog, rx_items, bbox_ok=True):
         only = None
     if only:
         order = [only] + [i for i in order if i != only][:len(order) - 1]
-    top = [{"item": i, "name": catalog[i]["name"], "score": scores.get(i),
+    top = [{"item": i, "name": catalog[i]["name"], "rank": ranks[i][0], "score": ranks[i][1],
             "in_rx": i in rx_items, "match": compare(pred, catalog[i])}
            for i in order]
     first = top[0]
@@ -130,7 +131,7 @@ def judge(pred, catalog, rx_items, bbox_ok=True):
     reasons = []
 
     if only:
-        reasons.append(f"각인 '{norm(pred['ocr']['text'])}'이(가) DB에서 [{first['name']}] 하나와만 일치")
+        reasons.append(f"각인 '{norm(pred['ocr']['text'])}'이(가) DB에서 [{first['name']}] 하나와만 일치 (점수 검색으로는 {first['rank']}위)")
         wrong = [ATTR_NAME[k] for k in ("color", "shape", "line") if not first["match"][k]["ok"]]
         if wrong:
             reasons.append(", ".join(wrong) + "은(는) DB와 다르게 읽힘 (조명·배경 영향일 수 있음)")

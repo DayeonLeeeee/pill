@@ -151,7 +151,7 @@ def get_image(image_id: str):
 
 def run_model(path, bbox):
     with model_lock:
-        pred = model.predict(path, bbox=bbox, search=True, top_k=5)
+        pred = model.predict(path, bbox=bbox, search=True, top_k=len(catalog))  # 전체 순위 (각인으로 끌어올린 약의 점수도 보이게)
         pred["ocr"]["agreeing_angles"] = model.ocr_reader.last["agreeing_angles"]
         return pred
 
@@ -259,6 +259,15 @@ def demo_image(i: int):
     if not 0 <= i < len(config["stage_cases"]):
         raise HTTPException(404)
     return FileResponse(BUNDLE / config["stage_cases"][i]["example_image"])
+
+
+@app.middleware("http")
+async def no_cache(request, call_next):
+    # 화면 파일을 브라우저가 예전 것으로 들고 있지 않게 (서버만 새 버전이면 화면이 깨짐)
+    response = await call_next(request)
+    if not request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
 
 
 app.mount("/", StaticFiles(directory=HERE / "static", html=True))
