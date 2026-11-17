@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "GPU_images": 2,
+  "OCR_text_exact_match": true,
+  "max_probability_differences": [
+    {
+      "color": 0.0,
+      "shape": 0.0,
+      "score_line": 0.0
+    },
+    {
+      "color": 0.0,
+      "shape": 0.0,
+      "score_line": 0.0
+    }
+  ],
+  "no_hardcoded_original_PC_paths_in_executable_Python": true
+}

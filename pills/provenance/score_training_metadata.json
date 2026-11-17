@@ -1,0 +1,125 @@
+{
+  "selected_epoch": 1,
+  "threshold": 0.52,
+  "validation_at_half": {
+    "photos": 19454,
+    "threshold": 0.5,
+    "accuracy": 0.9997429834481341,
+    "balanced_accuracy": 0.9997350822955215,
+    "precision": 0.9988910451899086,
+    "recall": 0.9997225305216426,
+    "specificity": 0.9997476340694006,
+    "false_positive_rate": 0.0002523659305993691,
+    "f1": 0.999306614893912,
+    "presence_confusion": [
+      [
+        15846,
+        4
+      ],
+      [
+        1,
+        3603
+      ]
+    ],
+    "item_balanced_presence_recall": 0.9997349281458114,
+    "item_recall_absent": 0.9997476340694007,
+    "item_recall_present": 0.9997222222222223,
+    "conditional_type_macro_item_recall": 1.0,
+    "conditional_type_item_recall": {
+      "-": 1.0,
+      "+": 1.0
+    },
+    "conditional_type_confusion": [
+      [
+        3382,
+        0
+      ],
+      [
+        0,
+        222
+      ]
+    ],
+    "full_type_confusion": [
+      [
+        15846,
+        4,
+        0
+      ],
+      [
+        1,
+        3381,
+        0
+      ],
+      [
+        0,
+        0,
+        222
+      ]
+    ],
+    "full_type_macro_f1": 0.9997011255022735,
+    "selection": 0.999814449702068,
+    "loss": 0.0029970542802945505
+  },
+  "validation_after_threshold_calibration": {
+    "photos": 19454,
+    "threshold": 0.52,
+    "accuracy": 0.9997943867585073,
+    "balanced_accuracy": 0.9997666280368466,
+    "precision": 0.9991680532445923,
+    "recall": 0.9997225305216426,
+    "specificity": 0.9998107255520505,
+    "false_positive_rate": 0.0001892744479495268,
+    "f1": 0.9994452149791956,
+    "presence_confusion": [
+      [
+        15847,
+        3
+      ],
+      [
+        1,
+        3603
+      ]
+    ],
+    "item_balanced_presence_recall": 0.9997664738871364,
+    "item_recall_absent": 0.9998107255520504,
+    "item_recall_present": 0.9997222222222223,
+    "conditional_type_macro_item_recall": 1.0,
+    "conditional_type_item_recall": {
+      "-": 1.0,
+      "+": 1.0
+    },
+    "conditional_type_confusion": [
+      [
+        3382,
+        0
+      ],
+      [
+        0,
+        222
+      ]
+    ],
+    "full_type_confusion": [
+      [
+        15847,
+        3,
+        0
+      ],
+      [
+        1,
+        3381,
+        0
+      ],
+      [
+        0,
+        0,
+        222
+      ]
+    ],
+    "full_type_macro_f1": 0.9997608726075861,
+    "selection": 0.9998365317209954
+  },
+  "supports_other_type": false,
+  "item_id_or_reference_needed_at_inference": false,
+  "selection_data": "validation only; no test evaluation or model selection",
+  "model_sha256": "8d623fa26a0257a390d72530f9ffe5bcad1f3107787c3adc6a8b8df8635d045f"
+}

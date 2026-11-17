@@ -1,0 +1,13 @@
+{
+  "CPU_inference": true,
+  "NVIDIA_GPU_inference": true,
+  "relocated_directory_with_spaces_and_Korean": true,
+  "isolated_Python_minus_I": true,
+  "CLI_batch_7_images": true,
+  "already_cropped_input": true,
+  "original_implementation_output_parity": true,
+  "original_model_weight_hashes_identical": true,
+  "fresh_dependency_install_performed": false,
+  "dependency_versions_checked_against_official_distribution_pages": true,
+  "training_data_not_included": true
+}

@@ -1,0 +1,12 @@
+{
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "packages": {
+    "torch": "2.10.0+cu128",
+    "torchvision": "0.25.0+cu128",
+    "timm": "1.0.24",
+    "numpy": "2.3.5",
+    "Pillow": "13.0.0"
+  },
+  "inference_source_model_weights_unchanged": true,
+  "pytorch_installation_reference": "https://pytorch.org/get-started/previous-versions/"
+}

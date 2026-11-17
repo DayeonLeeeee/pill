@@ -1,0 +1,72 @@
+[
+  {
+    "image": "images/54/54edd8723b3e141b9a1e97a6777bba391951f7fbe8fa29f4621c8013a2aab68a.png",
+    "bbox": [
+      360,
+      531,
+      174,
+      173
+    ],
+    "sha256": "54edd8723b3e141b9a1e97a6777bba391951f7fbe8fa29f4621c8013a2aab68a"
+  },
+  {
+    "image": "images/91/91e641c7b55a12c04f84815be39be24258cd631796472db7dd50e3a7902668aa.png",
+    "bbox": [
+      403,
+      530,
+      173,
+      166
+    ],
+    "sha256": "91e641c7b55a12c04f84815be39be24258cd631796472db7dd50e3a7902668aa"
+  },
+  {
+    "image": "images/5b/5b149c17323dda94a6690b87cdfd35ddc705a97f2da85ea9eb08bc6faa25c56b.png",
+    "bbox": [
+      318,
+      549,
+      326,
+      226
+    ],
+    "sha256": "5b149c17323dda94a6690b87cdfd35ddc705a97f2da85ea9eb08bc6faa25c56b"
+  },
+  {
+    "image": "images/c6/c6ca799b21574e07bd72b2368e9306fc7ed14f5fff88dd1751ad102f29f84e2e.png",
+    "bbox": [
+      313,
+      477,
+      247,
+      307
+    ],
+    "sha256": "c6ca799b21574e07bd72b2368e9306fc7ed14f5fff88dd1751ad102f29f84e2e"
+  },
+  {
+    "image": "images/2f/2f4a8f17e40cd67653605c640dd06ce173d3ed7a93e4fe32a9045028704c3087.png",
+    "bbox": [
+      440,
+      570,
+      206,
+      196
+    ],
+    "sha256": "2f4a8f17e40cd67653605c640dd06ce173d3ed7a93e4fe32a9045028704c3087"
+  },
+  {
+    "image": "images/23/23146d87773c4b24071cd09e093ce5727a03e9a1101cecdfc06c2ade9c00d55a.png",
+    "bbox": [
+      220,
+      472,
+      506,
+      428
+    ],
+    "sha256": "23146d87773c4b24071cd09e093ce5727a03e9a1101cecdfc06c2ade9c00d55a"
+  },
+  {
+    "image": "images/0d/0db6a9fc8d4fd266cb211bc4a7da91456e9378f4d8ea9551e7ccdd0f1f032650.png",
+    "bbox": [
+      344,
+      574,
+      181,
+      180
+    ],
+    "sha256": "0db6a9fc8d4fd266cb211bc4a7da91456e9378f4d8ea9551e7ccdd0f1f032650"
+  }
+]

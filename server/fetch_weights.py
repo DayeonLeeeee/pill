@@ -7,7 +7,7 @@ import sys
 import urllib.request
 from pathlib import Path
 
-bundle = Path(os.environ.get("BUNDLE_ROOT", Path(__file__).parent.parent / "PillModels4"))
+bundle = Path(os.environ.get("BUNDLE_ROOT", Path(__file__).parent.parent / "pills"))
 models = json.loads((bundle / "model_manifest.json").read_text("utf8"))["models"]
 base = os.environ.get("WEIGHTS_URL_BASE", "").rstrip("/")
 

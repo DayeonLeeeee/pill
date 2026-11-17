@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "explicit_cropped_mode": true,
+  "bbox_xywh": [
+    0,
+    0,
+    174,
+    173
+  ],
+  "all_four_models_executed": true
+}

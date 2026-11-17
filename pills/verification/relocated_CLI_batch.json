@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "images": 7,
+  "separate_working_directory": true,
+  "isolated_Python_flag": true,
+  "all_four_models_and_DB": true,
+  "input_paths_relative_to_manifest": true
+}
