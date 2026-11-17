@@ -1,0 +1,25 @@
+{
+  "patients": [
+    {
+      "id": "P01",
+      "name": "김순자 님 (302호)",
+      "rx": [
+        {"item": "K-029315", "label": "혈압약 A"},
+        {"item": "K-008441", "label": "B"}
+      ]
+    },
+    {
+      "id": "P02",
+      "name": "박영수 님 (305호)",
+      "rx": [
+        {"item": "K-023631", "label": "혈압약"},
+        {"item": "K-016423", "label": "전립선약"}
+      ]
+    }
+  ],
+  "stage_cases": [
+    {"case": "일치", "patient": "P01", "example_image": "examples/images/54/54edd8723b3e141b9a1e97a6777bba391951f7fbe8fa29f4621c8013a2aab68a.png"},
+    {"case": "불일치", "patient": "P01", "example_image": "examples/images/23/23146d87773c4b24071cd09e093ce5727a03e9a1101cecdfc06c2ade9c00d55a.png"},
+    {"case": "보류", "patient": "P02", "example_image": "examples/images/2f/2f4a8f17e40cd67653605c640dd06ce173d3ed7a93e4fe32a9045028704c3087.png"}
+  ]
+}

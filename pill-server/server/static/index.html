@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PillScope</title>
+<style>
+  :root {
+    --bg: #f4f6f9; --line: #e2e8f0; --text: #1e293b; --sub: #64748b; --accent: #6366f1;
+    --green: #16a34a; --green-bg: #f0fdf4; --amber: #d97706; --amber-bg: #fffbeb; --red: #dc2626; --red-bg: #fef2f2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Pretendard", sans-serif; background: var(--bg); color: var(--text); }
+  header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: #fff; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 1.1rem; }
+  #health { font-size: .75rem; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: var(--line); color: var(--sub); }
+  #health.ready { background: #dcfce7; color: var(--green); }
+  nav { display: flex; background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  nav button { flex: 1; padding: 12px 4px; border: 0; background: none; font-weight: 600; font-size: .9rem; font-family: inherit; color: var(--sub); border-bottom: 3px solid transparent; cursor: pointer; }
+  nav button.on { color: var(--accent); border-bottom-color: var(--accent); }
+  #qCount { background: var(--red); color: #fff; border-radius: 99px; padding: 0 7px; font-size: .72rem; margin-left: 4px; }
+  main { max-width: 620px; margin: 0 auto; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  .title { font-size: .85rem; font-weight: 600; color: var(--sub); margin-bottom: 8px; }
+  select { width: 100%; padding: 11px; border-radius: 10px; border: 1px solid var(--line); background: #f8fafc; font-weight: 600; font-size: .95rem; font-family: inherit; }
+  .rx { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line); background: #f8fafc; cursor: pointer; }
+  .rx.on { border-color: var(--accent); background: #eef2ff; }
+  .rx.done { border-color: #bbf7d0; background: var(--green-bg); color: var(--green); }
+  .rx b { font-size: .95rem; }
+  .rx small { display: block; font-size: .78rem; color: var(--sub); }
+  .rx span { font-size: .78rem; font-weight: 600; color: var(--sub); white-space: nowrap; margin-left: 8px; }
+  .demo { padding: 10px; border-radius: 12px; border: 1px solid #c084fc; background: #faf5ff; }
+  .demo .title { color: #7e22ce; margin-bottom: 6px; }
+  .demo button { padding: 8px; border-radius: 8px; border: 1px solid #d8b4fe; background: #fff; color: #6b21a8; font-weight: 600; font-size: .8rem; font-family: inherit; cursor: pointer; }
+  #viewer { position: relative; min-height: 220px; display: flex; align-items: center; justify-content: center; background: #fff; border: 2px dashed #cbd5e1; border-radius: 14px; overflow: hidden; }
+  #cv { width: 100%; display: none; touch-action: none; cursor: crosshair; }
+  #guide { padding: 20px; text-align: center; font-size: .9rem; line-height: 1.5; color: var(--sub); }
+  #guide b { display: block; margin-bottom: 6px; font-size: 1rem; color: var(--text); }
+  #busy { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(255,255,255,.9); font-weight: 600; font-size: .88rem; }
+  .spinner { width: 32px; height: 32px; border: 4px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hint { font-size: .78rem; color: var(--sub); text-align: center; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  .btn { padding: 14px; border: 0; border-radius: 12px; font-weight: 700; font-size: 1rem; font-family: inherit; color: #fff; background: var(--accent); cursor: pointer; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .btn.green { background: var(--green); } .btn.amber { background: var(--amber); } .btn.red { background: var(--red); }
+  .btn.plain { background: #fff; color: var(--text); border: 1px solid var(--line); font-size: .9rem; }
+  .btn.sm { padding: 8px 10px; font-size: .8rem; }
+  .verdict { padding: 16px; border: 2px solid; border-radius: 14px; }
+  .verdict h2 { font-size: 1.12rem; margin-bottom: 4px; }
+  .verdict p { font-size: .88rem; margin-bottom: 8px; }
+  .verdict ul { padding: 8px 12px 8px 26px; border-radius: 8px; background: rgba(255,255,255,.75); font-size: .82rem; }
+  .v-green { color: var(--green); border-color: #22c55e; background: var(--green-bg); }
+  .v-amber { color: var(--amber); border-color: #f59e0b; background: var(--amber-bg); }
+  .v-red { color: var(--red); border-color: #ef4444; background: var(--red-bg); }
+  .attrs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .attrs div { padding: 8px; text-align: center; border: 1px solid var(--line); border-radius: 10px; background: #f8fafc; font-size: .72rem; color: var(--sub); }
+  .attrs b { display: block; font-size: .92rem; color: var(--text); word-break: break-all; }
+  table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+  th, td { padding: 7px 4px; border-bottom: 1px solid var(--line); text-align: center; }
+  th { font-size: .74rem; font-weight: 600; color: var(--sub); }
+  th:nth-child(2), td:nth-child(2) { text-align: left; }
+  td:nth-child(2) { font-weight: 600; }
+  .tag { margin-left: 4px; padding: 1px 6px; border-radius: 6px; background: #e0e7ff; color: #4338ca; font-size: .7rem; }
+  .o { color: var(--green); font-weight: 700; } .x { color: var(--red); font-weight: 700; }
+  .chip { padding: 2px 9px; border-radius: 99px; font-size: .75rem; font-weight: 700; }
+  .chip.v-green { background: #dcfce7; } .chip.v-amber { background: #fef3c7; } .chip.v-red { background: #fee2e2; }
+  .log { display: flex; gap: 12px; }
+  .log img { width: 76px; height: 76px; flex-shrink: 0; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+  .log .meta { font-size: .78rem; color: var(--sub); }
+  .log .name { margin: 3px 0; font-weight: 700; }
+  .empty { padding: 30px 0; text-align: center; color: var(--sub); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>PillScope</h1>
+  <span id="health">연결 중</span>
+</header>
+<nav>
+  <button class="on" data-tab="check">투약 확인</button>
+  <button data-tab="logs">확인 기록</button>
+  <button data-tab="queue">약사 확인 목록<span id="qCount" class="hidden"></span></button>
+</nav>
+
+<main id="tab-check">
+  <section class="card">
+    <div class="title">환자와 오늘 처방</div>
+    <select id="patientSel"></select>
+    <div id="rxList"></div>
+  </section>
+
+  <section class="demo">
+    <div class="title">무대 사례 (테스트 사진)</div>
+    <div class="row" id="demoBtns"></div>
+  </section>
+
+  <section id="viewer">
+    <div id="guide"><b id="guideTitle">알약 한 알을 촬영하세요</b>한 장에 한 알, 단색 바탕 위에 놓고 찍어 주세요.</div>
+    <canvas id="cv"></canvas>
+    <div id="busy"><div class="spinner"></div><div id="busyText"></div></div>
+  </section>
+  <p class="hint hidden" id="boxHint"></p>
+
+  <div class="row">
+    <input type="file" id="fileIn" accept="image/*" capture="environment" hidden>
+    <button class="btn plain" id="shootBtn">촬영 / 사진 선택</button>
+    <button class="btn" id="checkBtn" disabled>확인하기</button>
+  </div>
+
+  <div id="result" class="hidden" style="display:flex; flex-direction:column; gap:12px"></div>
+</main>
+
+<main id="tab-logs" class="hidden">
+  <section class="card">
+    <div class="title">확인 기록</div>
+    <select id="logPatientSel"></select>
+  </section>
+  <div id="logList" style="display:flex; flex-direction:column; gap:10px"></div>
+</main>
+
+<main id="tab-queue" class="hidden">
+  <section class="card"><div class="title">판단 보류와 불일치 의심 중 아직 처리하지 않은 건</div></section>
+  <div id="queueList" style="display:flex; flex-direction:column; gap:10px"></div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+
+const VERDICT = {
+  '일치 후보': { cls: 'v-green', color: '#22c55e', desc: '처방약과 일치하는 후보입니다. 담당자가 확인한 뒤 투약하세요.' },
+  '불일치 의심': { cls: 'v-red', color: '#ef4444', desc: '처방에 없는 약으로 보입니다. 투약을 멈추고 간호사·약사에게 확인하세요.' },
+  '판단 보류': { cls: 'v-amber', color: '#f59e0b', desc: 'AI가 판단하지 않았습니다. 약사 확인 목록으로 보냈습니다.' },
+};
+
+let patients = [];
+let patient = null;
+let target = null;        // 선택한 처방약 순번
+const given = {};         // 환자별 투약 완료한 품목
+let img, imageId, imgW, imgH, bbox, scale;
+const cv = $('cv');
+const ctx = cv.getContext('2d');
+
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || res.statusText);
+  }
+  return res.json();
+}
+
+function post(path, data) {
+  return api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+}
+
+async function checkHealth() {
+  try {
+    const h = await api('/api/health');
+    $('health').textContent = h.ready ? 'AI 준비됨' : h.error ? '모델 오류' : '모델 로딩 중';
+    $('health').classList.toggle('ready', h.ready);
+    if (!h.ready && !h.error) setTimeout(checkHealth, 3000);
+  } catch {
+    $('health').textContent = '서버 연결 안 됨';
+    setTimeout(checkHealth, 5000);
+  }
+}
+
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+function showTab(name) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  for (const t of ['check', 'logs', 'queue']) $('tab-' + t).classList.toggle('hidden', t !== name);
+  if (name === 'logs') loadLogs();
+  if (name === 'queue') loadQueue();
+}
+
+async function init() {
+  checkHealth();
+  patients = await api('/api/patients');
+  const options = patients.map(p => `<option value="${p.id}">${esc(p.name)} · ${p.rx.length}알</option>`).join('');
+  $('patientSel').innerHTML = options;
+  $('logPatientSel').innerHTML = '<option value="">전체 환자</option>' + options;
+  $('patientSel').onchange = () => selectPatient($('patientSel').value);
+  $('logPatientSel').onchange = loadLogs;
+  selectPatient(patients[0].id);
+
+  const cases = await api('/api/demo_cases');
+  $('demoBtns').innerHTML = cases.map((c, i) => `<button data-i="${i}">${esc(c.case)} (${c.patient})</button>`).join('');
+  $('demoBtns').querySelectorAll('button').forEach(b => b.onclick = async () => {
+    const c = cases[b.dataset.i];
+    if (c.patient !== patient.id) {
+      $('patientSel').value = c.patient;
+      selectPatient(c.patient);
+    }
+    const blob = await (await fetch(c.image_url)).blob();
+    openPhoto(new File([blob], 'demo.png', { type: blob.type }));
+  });
+  updateQueueCount();
+}
+
+function selectPatient(id) {
+  patient = patients.find(p => p.id === id);
+  given[id] ??= {};
+  target = null;
+  resetPhoto();
+  renderRx();
+}
+
+function renderRx() {
+  const done = given[patient.id];
+  $('rxList').innerHTML = patient.rx.map((r, i) => `
+    <div class="rx ${done[r.item] ? 'done' : ''} ${target === i ? 'on' : ''}" data-i="${i}">
+      <div>
+        <b>${i + 1}. ${esc(r.label)} · ${esc(r.name)}</b>
+        <small>${esc(r.color)} / ${esc(r.shape)} / 각인 ${esc(r.imprint || '없음')}</small>
+      </div>
+      <span>${done[r.item] ? '투약 완료' : target === i ? '촬영 대기' : '선택'}</span>
+    </div>`).join('');
+  $('rxList').querySelectorAll('.rx').forEach(el => el.onclick = () => {
+    target = Number(el.dataset.i);
+    $('guideTitle').textContent = `[${patient.rx[target].name}] 한 알을 촬영하세요`;
+    renderRx();
+  });
+}
+
+$('shootBtn').onclick = () => $('fileIn').click();
+$('fileIn').onchange = e => {
+  if (e.target.files[0]) openPhoto(e.target.files[0]);
+  e.target.value = '';
+};
+
+async function openPhoto(file) {
+  $('result').classList.add('hidden');
+  $('checkBtn').disabled = true;
+  setBusy('사진 올리는 중');
+  try {
+    const form = new FormData();
+    form.append('image', file);
+    const up = await api('/api/upload', { method: 'POST', body: form });
+    ({ image_id: imageId, width: imgW, height: imgH, bbox } = up);
+    img = await new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = reject;
+      im.src = `/api/images/${imageId}`;
+    });
+    scale = Math.min(1, 1024 / Math.max(imgW, imgH));
+    cv.width = Math.round(imgW * scale);
+    cv.height = Math.round(imgH * scale);
+    $('guide').style.display = 'none';
+    cv.style.display = 'block';
+    $('boxHint').classList.remove('hidden');
+    $('boxHint').textContent = bbox
+      ? '초록 상자가 찾은 알약 위치입니다. 틀리면 사진 위를 드래그해 다시 그려 주세요.'
+      : '알약 위치를 찾지 못했습니다. 사진 위를 드래그해 알약을 감싸 주세요.';
+    draw();
+    $('checkBtn').disabled = false;
+  } catch (e) {
+    alert('사진을 올리지 못했습니다: ' + e.message);
+  }
+  setBusy(null);
+}
+
+function resetPhoto() {
+  img = imageId = bbox = null;
+  cv.style.display = 'none';
+  $('guide').style.display = '';
+  $('guideTitle').textContent = '알약 한 알을 촬영하세요';
+  $('boxHint').classList.add('hidden');
+  $('checkBtn').disabled = true;
+  $('result').classList.add('hidden');
+}
+
+function setBusy(text) {
+  $('busy').style.display = text ? 'flex' : 'none';
+  $('busyText').textContent = text || '';
+}
+
+function draw(color = '#22c55e', label) {
+  ctx.drawImage(img, 0, 0, cv.width, cv.height);
+  if (!bbox) return;
+  const [x, y, w, h] = bbox.map(v => v * scale);
+  ctx.lineWidth = Math.max(3, cv.width * 0.006);
+  ctx.strokeStyle = color;
+  ctx.strokeRect(x, y, w, h);
+  if (label) {
+    ctx.font = `bold ${Math.max(14, cv.width * 0.024)}px sans-serif`;
+    const top = Math.max(0, y - 30);
+    ctx.fillStyle = color;
+    ctx.fillRect(x, top, ctx.measureText(label).width + 14, 30);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(label, x + 7, top + 21);
+  }
+}
+
+// 사진 위를 드래그해서 상자를 다시 그림
+let dragFrom = null;
+function imagePoint(e) {
+  const r = cv.getBoundingClientRect();
+  return [(e.clientX - r.left) / r.width * imgW, (e.clientY - r.top) / r.height * imgH];
+}
+cv.onpointerdown = e => {
+  dragFrom = imagePoint(e);
+  cv.setPointerCapture(e.pointerId);
+};
+cv.onpointermove = e => {
+  if (!dragFrom) return;
+  const [x1, y1] = dragFrom;
+  const [x2, y2] = imagePoint(e);
+  bbox = [Math.min(x1, x2), Math.min(y1, y2), Math.abs(x2 - x1), Math.abs(y2 - y1)].map(Math.round);
+  draw('#6366f1');
+};
+cv.onpointerup = () => {
+  dragFrom = null;
+  if (!bbox) return;
+  let [x, y, w, h] = bbox;
+  x = Math.max(0, x);
+  y = Math.max(0, y);
+  bbox = Math.min(w, h) < 16 ? null : [x, y, Math.min(w, imgW - x), Math.min(h, imgH - y)];
+  draw();
+};
+
+$('checkBtn').onclick = async () => {
+  setBusy('색·모양·분할선·각인 확인 중');
+  $('checkBtn').disabled = true;
+  try {
+    const form = new FormData();
+    form.append('patient_id', patient.id);
+    form.append('image_id', imageId);
+    if (bbox) form.append('bbox', JSON.stringify(bbox));
+    if (target !== null) form.append('target_item', patient.rx[target].item);
+    const r = await api('/api/predict', { method: 'POST', body: form });
+    bbox = r.bbox;
+    showResult(r);
+    updateQueueCount();
+  } catch (e) {
+    alert('확인하지 못했습니다: ' + e.message);
+  }
+  setBusy(null);
+  $('checkBtn').disabled = false;
+};
+
+const mark = ok => ok ? '<span class="o">O</span>' : '<span class="x">X</span>';
+const pct = p => Math.round(p * 100) + '%';
+
+function resultHTML(r) {
+  const v = VERDICT[r.verdict];
+  const first = r.top_k[0];
+  let html = `
+    <div class="verdict ${v.cls}">
+      <h2>${esc(r.verdict)}${first && r.verdict !== '판단 보류' ? ' · ' + esc(first.name) : ''}</h2>
+      <p>${esc(r.reason)}. ${v.desc}</p>
+      <ul>${r.reasons.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+    </div>`;
+  if (r.attrs) {
+    const a = r.attrs;
+    html += `
+      <div class="card">
+        <div class="title">AI가 읽은 속성</div>
+        <div class="attrs">
+          <div>색<b>${esc(a.color[0].label)}</b>${pct(a.color[0].probability)}</div>
+          <div>모양<b>${esc(a.shape[0].label)}</b>${pct(a.shape[0].probability)}</div>
+          <div>분할선<b>${esc(a.line.label)}</b>유무 ${pct(a.line.presence_probability)}</div>
+          <div>각인<b>${esc(a.imprint.text || '못 읽음')}</b>&nbsp;</div>
+        </div>
+      </div>`;
+  }
+  if (r.top_k.length) {
+    const rows = r.top_k.map((t, i) => {
+      const m = t.match;
+      const dbImprint = [...m.imprint.catalog.front, ...m.imprint.catalog.back].join(' / ');
+      return `<tr>
+        <td>${i + 1}</td>
+        <td>${esc(t.name)}${t.in_rx ? '<span class="tag">처방</span>' : ''}</td>
+        <td>${t.score.toFixed(3)}</td>
+        <td>${mark(m.color.ok)}</td><td>${mark(m.shape.ok)}</td><td>${mark(m.line.ok)}</td>
+        <td title="DB 각인: ${esc(dbImprint)}">${mark(m.imprint.ok)}</td>
+      </tr>`;
+    }).join('');
+    html += `
+      <div class="card">
+        <div class="title">DB 후보 Top-${r.top_k.length}와 속성별 일치</div>
+        <table>
+          <tr><th>#</th><th>약</th><th>점수</th><th>색</th><th>모양</th><th>분할선</th><th>각인</th></tr>
+          ${rows}
+        </table>
+        <p class="hint" style="margin-top:8px">1·2위 점수 차 ${r.search.score_margin.toFixed(3)} (보류 기준 ${r.search.margin_threshold.toFixed(3)}). 점수는 확률이 아닙니다.</p>
+      </div>`;
+  }
+  return html;
+}
+
+function showResult(r) {
+  const v = VERDICT[r.verdict];
+  draw(v.color, r.verdict === '판단 보류' ? '판단 보류' : r.top_k[0].name);
+
+  let buttons;
+  if (r.verdict === '일치 후보') buttons = '<button class="btn green" data-act="administered">담당자 확인 후 투약</button>';
+  else if (r.verdict === '불일치 의심') buttons = '<button class="btn red" data-act="stopped">투약 중지 · 약사 확인 요청</button>';
+  else buttons = '<button class="btn amber" data-act="queue">약사 확인 목록 보기</button>';
+
+  const box = $('result');
+  box.innerHTML = resultHTML(r) + `<div class="row">${buttons}<button class="btn plain" data-act="again">다시 촬영</button></div>`;
+  box.classList.remove('hidden');
+  box.scrollIntoView({ behavior: 'smooth' });
+
+  box.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
+    const act = b.dataset.act;
+    if (act === 'again') return $('fileIn').click();
+    if (act === 'queue') return showTab('queue');
+    await post(`/api/logs/${r.log_id}/action`, { action: act, actor: '간호사' });
+    if (act === 'stopped') {
+      alert('투약을 중지하고 약사 확인 목록에 올렸습니다.');
+      return;
+    }
+    given[patient.id][r.top_k[0].item] = true;
+    target = null;
+    renderRx();
+    resetPhoto();
+    const left = patient.rx.filter(x => !given[patient.id][x.item]).length;
+    alert(left ? `투약 기록을 저장했습니다. 남은 처방 ${left}알` : '오늘 처방을 모두 확인했습니다.');
+  });
+}
+
+function logCard(log, forPharmacist) {
+  const v = VERDICT[log.verdict];
+  const first = log.result.top_k[0];
+  const history = log.actions.map(a => esc(`${a.at.slice(11, 16)} ${a.actor} ${a.action} ${a.note}`)).join('<br>');
+  let html = `
+    <div class="card">
+      <div class="log">
+        <img src="/api/images/${log.image_id}" alt="">
+        <div>
+          <div class="meta">${esc(log.created_at.slice(0, 16).replace('T', ' '))} · ${esc(log.patient_name)} · #${log.id}</div>
+          <div class="name"><span class="chip ${v.cls}">${esc(log.verdict)}</span> ${esc(first ? first.name : '-')}</div>
+          <div class="meta">${esc(log.reason)} · 상태: <b>${esc(log.status)}</b></div>
+          ${history ? `<div class="meta">${history}</div>` : ''}
+        </div>
+      </div>`;
+  if (forPharmacist) {
+    html += `
+      <details style="margin-top:10px">
+        <summary class="meta" style="cursor:pointer">AI 근거 보기</summary>
+        <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px">${resultHTML(log.result)}</div>
+      </details>
+      <div class="row" style="margin-top:10px">
+        <button class="btn green sm" data-id="${log.id}" data-act="resolved_match">처방약 맞음</button>
+        <button class="btn red sm" data-id="${log.id}" data-act="resolved_mismatch">처방약 아님(회수)</button>
+        <button class="btn plain sm" data-id="${log.id}" data-act="retake">재촬영 요청</button>
+      </div>`;
+  }
+  return html + '</div>';
+}
+
+async function loadLogs() {
+  const id = $('logPatientSel').value;
+  const logs = await api('/api/logs' + (id ? '?patient_id=' + id : ''));
+  $('logList').innerHTML = logs.map(l => logCard(l, false)).join('') || '<p class="empty">기록이 없습니다.</p>';
+}
+
+async function loadQueue() {
+  const queue = await api('/api/review_queue');
+  $('queueList').innerHTML = queue.map(l => logCard(l, true)).join('') || '<p class="empty">확인할 건이 없습니다.</p>';
+  $('queueList').querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
+    const note = b.dataset.act === 'resolved_mismatch' ? prompt('메모 (선택)') || '' : '';
+    await post(`/api/logs/${b.dataset.id}/action`, { action: b.dataset.act, actor: '약사', note });
+    loadQueue();
+  });
+  setQueueCount(queue.length);
+}
+
+async function updateQueueCount() {
+  setQueueCount((await api('/api/review_queue')).length);
+}
+
+function setQueueCount(n) {
+  $('qCount').textContent = n;
+  $('qCount').classList.toggle('hidden', n === 0);
+}
+
+init();
+</script>
+</body>
+</html>
