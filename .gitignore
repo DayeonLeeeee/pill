@@ -151,3 +151,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+pills/weights/
+*.pt
+
+# 실행하면 생기는 것
+pills/results/
+server/data/
