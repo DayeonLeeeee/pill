@@ -1,0 +1,12 @@
+{
+  "charset": "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+  "img_size": [
+    224,
+    224
+  ],
+  "patch_size": [
+    16,
+    16
+  ],
+  "weights_url": "https://github.com/baudm/parseq/releases/download/v1.0.0/parseq_small_patch16_224-fcf06f5a.pt"
+}

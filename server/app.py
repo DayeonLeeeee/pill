@@ -1,4 +1,4 @@
-# 실행: BUNDLE_ROOT=../PillModels4 uvicorn app:app --port 8000
+# 실행: uvicorn app:app --port 8000
 import asyncio
 import io
 import json
@@ -19,7 +19,7 @@ from PIL import Image, ImageOps
 from pydantic import BaseModel
 
 HERE = Path(__file__).parent
-BUNDLE = Path(os.environ.get("BUNDLE_ROOT", HERE.parent / "PillModels4")).resolve()
+BUNDLE = Path(os.environ.get("BUNDLE_ROOT", HERE.parent / "pills")).resolve()
 DATA = Path(os.environ.get("DATA_DIR", HERE / "data"))
 IMAGES = DATA / "images"
 IMAGES.mkdir(parents=True, exist_ok=True)

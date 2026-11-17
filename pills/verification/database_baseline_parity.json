@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "cases": 2,
+  "candidate_top1_identical": true,
+  "margin_difference_below": 1e-07,
+  "experimental_tie_correction_not_enabled": true
+}

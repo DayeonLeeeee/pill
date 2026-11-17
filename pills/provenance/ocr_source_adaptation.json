@@ -1,0 +1,52 @@
+[
+  {
+    "module": "reader",
+    "upstream_sha256": "5d22b292c5f8d78064fb76c5e8db954026c0d0ead76795fb70ee8207765afebc",
+    "changes": "absolute sibling imports -> package-relative imports; common ROOT points to package root"
+  },
+  {
+    "module": "common",
+    "upstream_sha256": "a1c8daf5961b3501ebcc44ecb0335bc1f4061c991affd3833acc76df4537c296",
+    "changes": "absolute sibling imports -> package-relative imports; common ROOT points to package root"
+  },
+  {
+    "module": "runtime",
+    "upstream_sha256": "e1167e75ef49fc52bef68d05e0873c177df65690d4004e9378f898f6e1da4576",
+    "changes": "absolute sibling imports -> package-relative imports; common ROOT points to package root"
+  },
+  {
+    "module": "model",
+    "upstream_sha256": "e7c784a9255eb6aff4ca03e155fc929774877ccc19e96abe5c59fad05f541ee9",
+    "changes": "absolute sibling imports -> package-relative imports; common ROOT points to package root"
+  },
+  {
+    "module": "data",
+    "upstream_sha256": "2e33f729983cf004d851907395024240b2b4c6e15851c70b63d4b0cbb5bc2111",
+    "changes": "absolute sibling imports -> package-relative imports; common ROOT points to package root"
+  },
+  {
+    "module": "tta",
+    "upstream_sha256": "d4f2ca25ff45d9894336f81e65b5bffb910a82705bae9166a32098fd19a1431f",
+    "changes": "absolute sibling imports -> package-relative imports; common ROOT points to package root"
+  },
+  {
+    "module": "preprocess",
+    "upstream_sha256": "e42601444324b5bf415145a2c4c877cc44525ad8a94d0712c03ecc0628f7a75c",
+    "changes": "absolute sibling imports -> package-relative imports; common ROOT points to package root"
+  },
+  {
+    "module": "decoding",
+    "upstream_sha256": "566e7a3f61ad92f09c020ce71f6bdb05aabedc300a657883abce2b6c4d571199",
+    "changes": "absolute sibling imports -> package-relative imports; common ROOT points to package root"
+  },
+  {
+    "module": "parseq_adapter",
+    "upstream_sha256": "41e8baf6c2b0b91730e93fdd537429c40ecf76ef5fb713dfe67045ff0c29afb6",
+    "changes": "absolute sibling imports -> package-relative imports; common ROOT points to package root"
+  },
+  {
+    "module": "cer_metrics",
+    "upstream_sha256": "bad4577d76c07753d6cf7f268d261421111d28daad6b24ee66a561721f508e94",
+    "changes": "absolute sibling imports -> package-relative imports; common ROOT points to package root"
+  }
+]

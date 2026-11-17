@@ -1,0 +1,4 @@
+PARSeq, Copyright 2022 Darwin Bautista, Apache License 2.0.
+Source https://github.com/baudm/parseq
+Local changes: import paths for standalone use; timm helper import.
+Pill adapter separately resamples position embeddings and extends charset/length; original checkpoint parameters are transferred explicitly.

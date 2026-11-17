@@ -1,0 +1,20 @@
+{
+  "name": "PillOCR PARSeq v12",
+  "parameters": 95583072,
+  "input_size": 320,
+  "model_sha256": "926b8e48dacfef5cf76c6300bd2bf2f0e9ba1c4a33d1601091be6e2589596ba2",
+  "initial_model_sha256": "d7ecbe41c2eac8a9187723372c995aed9aa5e95e1b50ef3de78c93691e6b3d53",
+  "real_training_photos_per_epoch": 142799,
+  "completed_epochs": 2,
+  "validation_photos": 15850,
+  "test_photos": 4100,
+  "test_CER_whitespace_ignored": 0.1074582560296846,
+  "inference": "ROI+whole pill,4 rotations each,primary MBR",
+  "labels": "Original GT retained",
+  "test_training_overlap": 0,
+  "raw_dataset_images_included": false,
+  "example_images": 7,
+  "Qwen_needed": false,
+  "Python_recommended": "3.12,64-bit",
+  "data_path_policy": "manifest path is relative to --data-root; images/<SHA prefix>/<SHA>.png"
+}

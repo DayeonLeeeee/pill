@@ -1,10 +1,10 @@
-# PillScope 데모 서버
+# pills 데모 서버
 
-모델 패키지(PillModels4)를 불러 쓰는 FastAPI 서버. 화면(static/index.html)도 같이 띄운다.
+모델 패키지(pills/, 받은 PillModels4 폴더 이름만 바꾼 것)를 불러 쓰는 FastAPI 서버. 화면(static/index.html)도 같이 띄운다.
 
 ```
-pillscope/
-├─ PillModels4/   받은 모델 패키지 (weights 포함)
+pills/            저장소
+├─ pills/         모델 패키지 (weights 포함)
 ├─ server/
 │  ├─ app.py
 │  ├─ verdict.py         처방 대조 판정
@@ -18,16 +18,16 @@ pillscope/
 ## 노트북에서
 
 ```bat
-cd pillscope\server
-..\PillModels4\.venv\Scripts\python.exe -m pip install fastapi uvicorn python-multipart opencv-python-headless
-..\PillModels4\.venv\Scripts\python.exe -m uvicorn app:app --port 8000
+cd pills\server
+..\pills\.venv\Scripts\python.exe -m pip install fastapi uvicorn python-multipart opencv-python-headless
+..\pills\.venv\Scripts\python.exe -m uvicorn app:app --port 8000
 ```
 
 http://localhost:8000 . 오른쪽 위가 "AI 준비됨"이 되면 시작 (10~20초).
 
 ## Railway
 
-- `PillModels4/weights/`, `server/data/`는 .gitignore에 넣고 올린다.
+- `pills/weights/`, `server/data/`는 .gitignore에 넣고 올린다.
 - 가중치 4개는 GitHub Release 같은 곳에 올리고 환경변수 `WEIGHTS_URL_BASE`에 주소를 넣는다.
 - 메모리 2GB 정도 필요.
 - 기록(SQLite)과 사진은 `data/`에 저장돼서 재배포하면 지워진다. 남기려면 Volume을 `/app/data`에 연결.

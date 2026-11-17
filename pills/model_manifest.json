@@ -1,0 +1,46 @@
+{
+  "models": {
+    "color.pt": {
+      "package_path": "weights/color.pt",
+      "source_path": "C:\\Users\\COMPUTER\\Documents\\Codex\\2026-11-07\\dlrj\\outputs\\경구약제_독립계층모델_v4\\deployment\\color.pt",
+      "bytes": 45254535,
+      "sha256": "afa73d84fd26afa03d5501cc68940ca59bbfbee914141ff4ee0d201e724d19bf"
+    },
+    "shape.pt": {
+      "package_path": "weights/shape.pt",
+      "source_path": "C:\\Users\\COMPUTER\\Documents\\Codex\\2026-11-07\\dlrj\\outputs\\경구약제_독립계층모델_v4\\deployment\\shape.pt",
+      "bytes": 44808839,
+      "sha256": "d10e5090392a1acd29d155768fd9523ca3539bde53cf53ceab0c9028f0dbd859"
+    },
+    "parseq_v12.pt": {
+      "package_path": "weights/parseq_v12.pt",
+      "source_path": "C:\\Users\\COMPUTER\\Documents\\Codex\\2026-11-07\\dlrj\\outputs\\경구약제_OCR모델_v12_GT_다중사진\\parseq\\model.pt",
+      "bytes": 382407521,
+      "sha256": "926b8e48dacfef5cf76c6300bd2bf2f0e9ba1c4a33d1601091be6e2589596ba2"
+    },
+    "score.pt": {
+      "package_path": "weights/score.pt",
+      "source_path": "C:\\Users\\COMPUTER\\Documents\\Codex\\2026-11-17\\new-chat\\outputs\\분할선_원본면연결_확장학습_v1\\deployment\\model.pt",
+      "bytes": 111359055,
+      "sha256": "8d623fa26a0257a390d72530f9ffe5bcad1f3107787c3adc6a8b8df8635d045f"
+    }
+  },
+  "versions": {
+    "color": "independent v4 RGB ResNet18, 120 categorical colors",
+    "shape": "independent v4 grayscale ResNet18, 11 shapes",
+    "ocr": "PARSeq v12, ROI+whole, four rotations each, MBR",
+    "score": "expanded-face ConvNeXt-Tiny v1; validation-selected epoch 1 after 40 epochs"
+  },
+  "score_presence_threshold": 0.52,
+  "score_types": [
+    "없음",
+    "-",
+    "+"
+  ],
+  "score_other_supported": false,
+  "inference_requires": [
+    "image",
+    "XYWH pill bounding box, or explicit already-cropped image"
+  ],
+  "training_code_included": false
+}

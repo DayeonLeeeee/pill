@@ -1,12 +1,12 @@
 FROM python:3.12-slim
 
 WORKDIR /app
-ENV PYTHONUNBUFFERED=1 BUNDLE_ROOT=/app/PillModels4 DATA_DIR=/app/data DEVICE=cpu
+ENV PYTHONUNBUFFERED=1 BUNDLE_ROOT=/app/pills DATA_DIR=/app/data DEVICE=cpu
 
 COPY server/requirements.txt server/
 RUN pip install --no-cache-dir -r server/requirements.txt
 
-COPY PillModels4 PillModels4
+COPY pills pills
 COPY server server
 
 WORKDIR /app/server

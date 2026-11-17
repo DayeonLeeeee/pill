@@ -1,0 +1,7 @@
+{
+  "pytorch": "https://pytorch.org/get-started/previous-versions/",
+  "Pillow": "https://pypi.org/project/pillow/13.0.0/",
+  "numpy": "https://pypi.org/project/numpy/2.3.5/",
+  "timm": "https://pypi.org/project/timm/1.0.24/",
+  "versions_verified_date": "2026-11-17"
+}

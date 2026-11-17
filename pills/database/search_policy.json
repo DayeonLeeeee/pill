@@ -1,0 +1,19 @@
+{
+  "version": "frozen-study-baseline",
+  "catalog_items": 4525,
+  "seed": 20261117,
+  "active_attributes": "CSTL",
+  "aggregation": "equal-weight mean; text and score must match the same catalog face",
+  "text_normalization": "uppercase ASCII A-Z and 0-9 only; experimental symbol changes are NOT enabled",
+  "margin_threshold": 0.06666684150695801,
+  "score_round_decimals": 7,
+  "threshold_source": "validation19454 only, accepted-accuracy target .95 Wilson rule",
+  "calibrated_for_catalog_sha256": "ab6042e2b877208319e338e8983eb72a706d1fea1cd090dda56a91a375352018",
+  "observed_external4100": {
+    "top1": 0.6941463414634146,
+    "rejection_rate": 0.4953658536585366,
+    "accepted_accuracy": 0.9913001449975833
+  },
+  "diagnostic4050_accepted_accuracy": 0.6128691983122363,
+  "threshold_is_not_a_guarantee": true
+}
