@@ -362,10 +362,10 @@ function resultHTML(r) {
       <div class="card">
         <div class="title">AI가 읽은 속성</div>
         <div class="attrs">
+          <div>각인<b>${esc(a.imprint.text || '못 읽음')}</b>&nbsp;</div>
           <div>색<b>${esc(a.color[0].label)}</b>${pct(a.color[0].probability)}</div>
           <div>모양<b>${esc(a.shape[0].label)}</b>${pct(a.shape[0].probability)}</div>
           <div>분할선<b>${esc(a.line.label)}</b>유무 ${pct(a.line.presence_probability)}</div>
-          <div>각인<b>${esc(a.imprint.text || '못 읽음')}</b>&nbsp;</div>
         </div>
       </div>`;
   }
@@ -377,15 +377,15 @@ function resultHTML(r) {
         <td>${i + 1}</td>
         <td>${esc(t.name)}${t.in_rx ? '<span class="tag">처방</span>' : ''}</td>
         <td>${t.score.toFixed(3)}${t.rank > i + 1 ? `<br><small>(${t.rank}위)</small>` : ''}</td>
-        <td>${mark(m.color.ok)}</td><td>${mark(m.shape.ok)}</td><td>${mark(m.line.ok)}</td>
         <td title="DB 각인: ${esc(dbImprint)}">${mark(m.imprint.ok)}</td>
+        <td>${mark(m.color.ok)}</td><td>${mark(m.shape.ok)}</td><td>${mark(m.line.ok)}</td>
       </tr>`;
     }).join('');
     html += `
       <div class="card">
         <div class="title">DB 후보 Top-${r.top_k.length}와 속성별 일치</div>
         <table>
-          <tr><th>#</th><th>약</th><th>점수</th><th>색</th><th>모양</th><th>분할선</th><th>각인</th></tr>
+          <tr><th>#</th><th>약</th><th>점수</th><th>각인</th><th>색</th><th>모양</th><th>분할선</th></tr>
           ${rows}
         </table>
         <p class="hint" style="margin-top:8px">1·2위 점수 차 ${r.search.score_margin.toFixed(3)} (보류 기준 ${r.search.margin_threshold.toFixed(3)}). 점수는 확률이 아닙니다.</p>
