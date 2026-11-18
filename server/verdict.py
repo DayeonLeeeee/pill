@@ -103,7 +103,9 @@ def compare(pred, row):
     }
 
 
-CONF_MIN = 0.5  # 모양 확신도가 이 이상인데 각인이 가리킨 약과 모양이 다르면 보류
+# 각인이 가리킨 약과 모양이 다를 때, 모양 모델 확신도가 이 이상이면 보류한다.
+# '기타'는 어느 모양인지 모르겠다는 뜻이라 보류 근거로 쓰지 않는다.
+SHAPE_CONF_MIN = 0.5
 
 
 def imprint_candidates(q, catalog):
@@ -173,7 +175,7 @@ def judge(pred, catalog, rx_items, bbox_ok=True):
                 reasons.append(f"각인이 같은 후보 중 점수가 가장 높음 (2순위 [{second['name']}], 차 {gap:.3f})")
         # 모양은 실제 사진에서도 잘 맞는다. 각인이 가리킨 약과 모양이 다르면 각인을 잘못 읽었을 가능성이 크다
         shape = first["match"]["shape"]
-        if not shape["ok"] and pred["shape"]["confidence"] >= CONF_MIN:
+        if not shape["ok"] and shape["pred"] != "기타" and pred["shape"]["confidence"] >= SHAPE_CONF_MIN:
             reasons.append(f"그런데 모양이 다름 (사진 {shape['pred']}, DB {shape['catalog']}) - 각인을 잘못 읽었을 수 있음")
             return "판단 보류", "각인과 모양이 맞지 않음", reasons, top
         wrong = [ATTR_NAME[k] for k in ("color", "line") if not first["match"][k]["ok"]]
