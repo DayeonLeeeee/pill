@@ -130,8 +130,10 @@
 
   <div class="row">
     <input type="file" id="fileIn" accept="image/*" capture="environment" hidden>
-    <button class="btn plain" id="shootBtn">촬영 / 사진 선택</button>
-    <button class="btn" id="checkBtn" disabled>확인하기</button>
+    <input type="file" id="albumIn" accept="image/*" hidden>
+    <button class="btn plain" id="shootBtn">촬영</button>
+    <button class="btn plain" id="albumBtn">앨범</button>
+    <button class="btn" id="checkBtn" disabled style="flex:1.4">확인하기</button>
   </div>
 
   <div id="result" class="hidden" style="display:flex; flex-direction:column; gap:12px"></div>
@@ -328,7 +330,8 @@ function renderRx() {
 }
 
 $('shootBtn').onclick = () => $('fileIn').click();
-$('fileIn').onchange = e => {
+$('albumBtn').onclick = () => $('albumIn').click();
+$('fileIn').onchange = $('albumIn').onchange = e => {
   if (e.target.files[0]) openPhoto(e.target.files[0]);
   e.target.value = '';
 };
