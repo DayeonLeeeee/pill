@@ -1290,7 +1290,7 @@
 {"item":"K-013602","name":"리드미캡슐 375mg/PTP","conflicting_fields":[],"color_class1":"초록","color_class2":"초록, 진한","drug_shape":"장방형","line_front":"","line_back":"","print_front":["마크 LDM"],"print_back":[""]}
 {"item":"K-013614","name":"엔테론정 50mg","conflicting_fields":[],"color_class1":"노랑","color_class2":"","drug_shape":"원형","line_front":"","line_back":"","print_front":["E50"],"print_back":[""]}
 {"item":"K-013618","name":"레보팔시드정","conflicting_fields":[],"color_class1":"하양","color_class2":"","drug_shape":"원형","line_front":"","line_back":"","print_front":["HL104"],"print_back":[""]}
-{"item":"K-013626","name":"타이레놀콜드-에스정 325mg/PTP","conflicting_fields":[],"color_class1":null,"color_class2":null,"drug_shape":null,"line_front":null,"line_back":null,"print_front":[],"print_back":[]}
+{"item":"K-013626","name":"타이레놀콜드-에스정 325mg/PTP","conflicting_fields":[],"color_class1":"노랑","color_class2":"","drug_shape":"장방형","line_front":"","line_back":"","print_front":["TYLENOL"],"print_back":["COLD"]}
 {"item":"K-013628","name":"에스빌연질캡슐","conflicting_fields":[],"color_class1":"초록, 투명","color_class2":"","drug_shape":"장방형","line_front":"","line_back":"","print_front":["RPSVL"],"print_back":[""]}
 {"item":"K-013635","name":"경보세파클러캡슐","conflicting_fields":[],"color_class1":"파랑","color_class2":"하양","drug_shape":"장방형","line_front":"","line_back":"","print_front":["KBP CFC"],"print_back":[""]}
 {"item":"K-013641","name":"유니펙탄캡슐(에르도스테인)","conflicting_fields":[],"color_class1":"초록","color_class2":"노랑","drug_shape":"장방형","line_front":"","line_back":"","print_front":["FECTAN 300"],"print_back":[""]}
