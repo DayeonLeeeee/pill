@@ -9,7 +9,7 @@ pills/            저장소
 │  ├─ app.py
 │  ├─ verdict.py         처방 대조 판정
 │  ├─ autobbox.py        알약 위치 찾기 (단색 배경 가정, 화면에서 드래그로 수정 가능)
-│  ├─ demo_config.json   환자, 처방(품목코드), 무대 사례
+│  ├─ demo_config.json   처음 켤 때 넣는 환자·처방, 무대 사례
 │  ├─ fetch_weights.py   배포할 때 가중치 받기
 │  └─ static/index.html
 └─ Dockerfile
@@ -38,6 +38,9 @@ http://localhost:8000 . 오른쪽 위가 "AI 준비됨"이 되면 시작 (10~20�
 |---|---|---|
 | GET | /api/health | 모델 준비 여부 |
 | GET | /api/patients | 환자와 처방 |
+| POST·PUT·DELETE | /api/patients, /api/patients/{id} | 환자 추가·이름 변경·삭제 |
+| POST·PUT·DELETE | /api/patients/{id}/rx, /api/patients/{id}/rx/{item} | 처방 추가·표시 이름 변경·빼기 |
+| GET | /api/drugs?q= | 약 검색 (이름, 각인, 품목코드) |
 | POST | /api/upload | 사진 저장 + 자동 bbox |
 | POST | /api/predict | form: patient_id, image_id 또는 image, bbox(생략하면 자동), target_item |
 | GET | /api/logs?patient_id= | 확인 기록 |

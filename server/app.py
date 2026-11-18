@@ -3,6 +3,7 @@ import asyncio
 import io
 import json
 import os
+import re
 import sqlite3
 import sys
 import threading
@@ -31,7 +32,6 @@ from ocr_rotation import use_max_score  # noqa: E402
 from verdict import judge  # noqa: E402
 
 config = json.loads((HERE / "demo_config.json").read_text("utf8"))
-patients = {p["id"]: p for p in config["patients"]}
 with open(BUNDLE / "database/catalog.jsonl", encoding="utf8") as f:
     catalog = {r["item"]: r for r in map(json.loads, f)}
 
@@ -75,6 +75,14 @@ with db() as con:
         id integer primary key autoincrement, created_at text, patient_id text, target_item text,
         image_id text, bbox text, verdict text, reason text, top1_item text, top1_name text,
         status text, result_json text, actions text default '[]')""")
+    con.execute("create table if not exists patients (id text primary key, name text)")
+    con.execute("create table if not exists rx (patient_id text, item text, label text, position integer, primary key (patient_id, item))")
+    # 처음 켤 때만 demo_config.json의 환자·처방을 넣는다
+    if not con.execute("select 1 from patients").fetchone():
+        for p in config["patients"]:
+            con.execute("insert into patients values (?, ?)", (p["id"], p["name"]))
+            for n, r in enumerate(p["rx"]):
+                con.execute("insert into rx values (?, ?, ?, ?)", (p["id"], r["item"], r["label"], n))
 
 START_STATUS = {"일치 후보": "담당자 확인 대기", "불일치 의심": "투약 중지 · 약사 확인 요청", "판단 보류": "약사 확인 대기"}
 ACTIONS = {
@@ -95,8 +103,29 @@ def log_dict(row):
     d["bbox"] = json.loads(d["bbox"])
     d["actions"] = json.loads(d["actions"])
     d["result"] = json.loads(d.pop("result_json"))
-    d["patient_name"] = patients[d["patient_id"]]["name"]
+    d["patient_name"] = patient_name(d["patient_id"])
     return d
+
+
+def patient_name(patient_id):
+    with db() as con:
+        row = con.execute("select name from patients where id = ?", (patient_id,)).fetchone()
+    return row["name"] if row else f"(삭제된 환자 {patient_id})"
+
+
+def rx_items(patient_id):
+    with db() as con:
+        return [r["item"] for r in con.execute("select item from rx where patient_id = ? order by position", (patient_id,))]
+
+
+def drug_info(item):
+    c = catalog[item]
+    return {
+        "item": item, "name": c["name"],
+        "color": "+".join(x for x in (c["color_class1"], c["color_class2"]) if x),
+        "shape": c["drug_shape"],
+        "imprint": " / ".join(x for x in ("".join(c["print_front"]), "".join(c["print_back"])) if x),
+    }
 
 
 def image_path(image_id):
@@ -123,19 +152,95 @@ def health():
 
 @app.get("/api/patients")
 def get_patients():
-    out = []
-    for p in config["patients"]:
-        rx = []
-        for r in p["rx"]:
-            c = catalog[r["item"]]
-            rx.append({
-                "item": r["item"], "label": r["label"], "name": c["name"],
-                "color": "+".join(x for x in (c["color_class1"], c["color_class2"]) if x),
-                "shape": c["drug_shape"],
-                "imprint": " / ".join(x for x in ("".join(c["print_front"]), "".join(c["print_back"])) if x),
-            })
-        out.append({"id": p["id"], "name": p["name"], "rx": rx})
-    return out
+    with db() as con:
+        people = con.execute("select * from patients order by id").fetchall()
+        rx = con.execute("select * from rx order by position").fetchall()
+    return [{"id": p["id"], "name": p["name"],
+             "rx": [{**drug_info(r["item"]), "label": r["label"]} for r in rx if r["patient_id"] == p["id"]]}
+            for p in people]
+
+
+class PatientIn(BaseModel):
+    name: str
+
+
+@app.post("/api/patients")
+def add_patient(p: PatientIn):
+    if not p.name.strip():
+        raise HTTPException(400, "이름을 입력하세요")
+    with db() as con:
+        ids = [r["id"] for r in con.execute("select id from patients")]
+        n = max([int(i[1:]) for i in ids if i[1:].isdigit()] + [0]) + 1
+        new_id = f"P{n:02d}"
+        con.execute("insert into patients values (?, ?)", (new_id, p.name.strip()))
+    return {"id": new_id}
+
+
+@app.put("/api/patients/{patient_id}")
+def rename_patient(patient_id: str, p: PatientIn):
+    with db() as con:
+        if not con.execute("update patients set name = ? where id = ?", (p.name.strip(), patient_id)).rowcount:
+            raise HTTPException(404, "환자 없음")
+    return {"ok": True}
+
+
+@app.delete("/api/patients/{patient_id}")
+def delete_patient(patient_id: str):
+    # 확인 기록은 남긴다
+    with db() as con:
+        con.execute("delete from rx where patient_id = ?", (patient_id,))
+        if not con.execute("delete from patients where id = ?", (patient_id,)).rowcount:
+            raise HTTPException(404, "환자 없음")
+    return {"ok": True}
+
+
+class RxIn(BaseModel):
+    item: str
+    label: str = ""
+
+
+@app.post("/api/patients/{patient_id}/rx")
+def add_rx(patient_id: str, r: RxIn):
+    if r.item not in catalog:
+        raise HTTPException(404, "DB에 없는 품목코드")
+    with db() as con:
+        if not con.execute("select 1 from patients where id = ?", (patient_id,)).fetchone():
+            raise HTTPException(404, "환자 없음")
+        pos = con.execute("select coalesce(max(position), -1) + 1 from rx where patient_id = ?", (patient_id,)).fetchone()[0]
+        con.execute("insert or replace into rx values (?, ?, ?, ?)", (patient_id, r.item, r.label.strip(), pos))
+    return {"ok": True}
+
+
+@app.put("/api/patients/{patient_id}/rx/{item}")
+def edit_rx(patient_id: str, item: str, r: RxIn):
+    with db() as con:
+        if not con.execute("update rx set label = ? where patient_id = ? and item = ?", (r.label.strip(), patient_id, item)).rowcount:
+            raise HTTPException(404, "처방 없음")
+    return {"ok": True}
+
+
+@app.delete("/api/patients/{patient_id}/rx/{item}")
+def delete_rx(patient_id: str, item: str):
+    with db() as con:
+        con.execute("delete from rx where patient_id = ? and item = ?", (patient_id, item))
+    return {"ok": True}
+
+
+@app.get("/api/drugs")
+def search_drugs(q: str):
+    # 처방 추가용: 이름, 품목코드, 각인으로 찾기
+    q = q.strip()
+    if not q:
+        return []
+    key = re.sub("[^A-Z0-9]", "", q.upper())
+    hits = []
+    for item, c in catalog.items():
+        imprint = re.sub("[^A-Z0-9]", "", "".join(c["print_front"] + c["print_back"]).upper())
+        if q in c["name"] or q.upper() == item or (len(key) >= 2 and key in imprint):
+            hits.append(drug_info(item))
+            if len(hits) == 30:
+                break
+    return hits
 
 
 @app.post("/api/upload")
@@ -166,8 +271,9 @@ async def predict(
 ):
     if model is None:
         raise HTTPException(503, model_error or "모델 로딩 중입니다. 잠시 후 다시 시도하세요.")
-    if patient_id not in patients:
-        raise HTTPException(404, "환자 없음")
+    with db() as con:
+        if not con.execute("select 1 from patients where id = ?", (patient_id,)).fetchone():
+            raise HTTPException(404, "환자 없음")
     if image:
         image_id, im = save_image(await image.read())
     elif image_id:
@@ -176,7 +282,7 @@ async def predict(
         raise HTTPException(400, "image 또는 image_id가 필요합니다")
 
     box = json.loads(bbox) if bbox else find_pill(np.asarray(im))
-    rx = [r["item"] for r in patients[patient_id]["rx"]]
+    rx = rx_items(patient_id)
     pred = None
     if box:
         try:

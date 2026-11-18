@@ -29,6 +29,21 @@
   .rx b { font-size: .95rem; }
   .rx small { display: block; font-size: .78rem; color: var(--sub); }
   .rx span { font-size: .78rem; font-weight: 600; color: var(--sub); white-space: nowrap; margin-left: 8px; }
+  .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .head .title { margin: 0; }
+  .link { border: 0; background: none; color: var(--accent); font-weight: 600; font-size: .82rem; font-family: inherit; cursor: pointer; }
+  .edit { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px; }
+  .edit input { width: 100%; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--line); font-size: .9rem; font-family: inherit; }
+  .edit .line { display: flex; gap: 6px; align-items: center; }
+  .edit .line input { flex: 1; }
+  .edit .line .drug { flex: 2; font-size: .82rem; }
+  .edit .line .drug small { display: block; color: var(--sub); font-size: .74rem; }
+  .x-btn { border: 1px solid #fecaca; background: #fff; color: var(--red); border-radius: 8px; padding: 7px 9px; font-size: .78rem; font-family: inherit; cursor: pointer; white-space: nowrap; }
+  .ok-btn { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 7px 9px; font-size: .78rem; font-family: inherit; cursor: pointer; white-space: nowrap; }
+  .hits { max-height: 260px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
+  .hits div { padding: 8px 10px; border-bottom: 1px solid var(--line); cursor: pointer; font-size: .84rem; }
+  .hits div:hover { background: #eef2ff; }
+  .hits small { display: block; color: var(--sub); font-size: .74rem; }
   .demo { padding: 10px; border-radius: 12px; border: 1px solid #c084fc; background: #faf5ff; }
   .demo .title { color: #7e22ce; margin-bottom: 6px; }
   .demo button { padding: 8px; border-radius: 8px; border: 1px solid #d8b4fe; background: #fff; color: #6b21a8; font-weight: 600; font-size: .8rem; font-family: inherit; cursor: pointer; }
@@ -87,9 +102,18 @@
 
 <main id="tab-check">
   <section class="card">
-    <div class="title">환자와 오늘 처방</div>
+    <div class="head">
+      <div class="title">환자와 오늘 처방</div>
+      <div><button class="link" id="addPatientBtn">+ 환자</button> <button class="link" id="editBtn">수정</button></div>
+    </div>
     <select id="patientSel"></select>
     <div id="rxList"></div>
+    <div id="editBox" class="edit hidden">
+      <div class="line"><input id="nameIn" placeholder="환자 이름"><button class="ok-btn" id="saveNameBtn">이름 저장</button><button class="x-btn" id="delPatientBtn">환자 삭제</button></div>
+      <div id="rxEdit"></div>
+      <input id="drugQ" placeholder="처방 추가: 약 이름, 각인, 품목코드로 검색 (예: 타이레놀, VL, K-029315)">
+      <div id="hits" class="hits hidden"></div>
+    </div>
   </section>
 
   <section class="demo">
@@ -157,6 +181,10 @@ function post(path, data) {
   return api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
 }
 
+function put(path, data) {
+  return api(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+}
+
 async function checkHealth() {
   try {
     const h = await api('/api/health');
@@ -178,15 +206,21 @@ function showTab(name) {
   if (name === 'queue') loadQueue();
 }
 
-async function init() {
-  checkHealth();
+async function loadPatients(keepId) {
   patients = await api('/api/patients');
   const options = patients.map(p => `<option value="${p.id}">${esc(p.name)} · ${p.rx.length}알</option>`).join('');
-  $('patientSel').innerHTML = options;
+  $('patientSel').innerHTML = options || '<option value="">환자 없음</option>';
   $('logPatientSel').innerHTML = '<option value="">전체 환자</option>' + options;
+  const id = patients.some(p => p.id === keepId) ? keepId : patients[0]?.id;
+  if (id) $('patientSel').value = id;
+  selectPatient(id, id === keepId);
+}
+
+async function init() {
+  checkHealth();
   $('patientSel').onchange = () => selectPatient($('patientSel').value);
   $('logPatientSel').onchange = loadLogs;
-  selectPatient(patients[0].id);
+  await loadPatients();
 
   const cases = await api('/api/demo_cases');
   $('demoBtns').innerHTML = cases.map((c, i) => `<button data-i="${i}">${esc(c.case)} (${c.patient})</button>`).join('');
@@ -202,20 +236,86 @@ async function init() {
   updateQueueCount();
 }
 
-function selectPatient(id) {
-  patient = patients.find(p => p.id === id);
-  given[id] ??= {};
+function selectPatient(id, keepPhoto) {
+  patient = patients.find(p => p.id === id) || { id: '', name: '', rx: [] };
+  given[patient.id] ??= {};
   target = null;
-  resetPhoto();
+  if (!keepPhoto) resetPhoto();
   renderRx();
+  renderEdit();
 }
+
+// 환자·처방 수정
+$('editBtn').onclick = () => {
+  $('editBox').classList.toggle('hidden');
+  $('editBtn').textContent = $('editBox').classList.contains('hidden') ? '수정' : '닫기';
+  renderEdit();
+};
+$('addPatientBtn').onclick = async () => {
+  const name = prompt('새 환자 이름 (예: 이영희 님 (308호))');
+  if (!name) return;
+  const { id } = await post('/api/patients', { name });
+  await loadPatients(id);
+  $('editBox').classList.remove('hidden');
+  $('editBtn').textContent = '닫기';
+  renderEdit();
+};
+$('saveNameBtn').onclick = async () => {
+  await put(`/api/patients/${patient.id}`, { name: $('nameIn').value });
+  await loadPatients(patient.id);
+};
+$('delPatientBtn').onclick = async () => {
+  if (!confirm(`[${patient.name}] 환자를 삭제할까요? 처방도 같이 지워집니다. 확인 기록은 남습니다.`)) return;
+  await api(`/api/patients/${patient.id}`, { method: 'DELETE' });
+  await loadPatients();
+};
+
+function renderEdit() {
+  if ($('editBox').classList.contains('hidden') || !patient.id) return;
+  $('nameIn').value = patient.name;
+  $('rxEdit').innerHTML = patient.rx.map(r => `
+    <div class="line" style="margin-bottom:6px">
+      <input value="${esc(r.label)}" data-item="${r.item}" placeholder="표시 이름 (예: 혈압약 A)">
+      <div class="drug">${esc(r.name)}<small>${r.item} · ${esc(r.color)} / ${esc(r.shape)} / ${esc(r.imprint || '각인 없음')}</small></div>
+      <button class="x-btn" data-del="${r.item}">빼기</button>
+    </div>`).join('') || '<p class="hint">처방이 없습니다. 아래에서 검색해 추가하세요.</p>';
+  $('rxEdit').querySelectorAll('input').forEach(el => el.onchange = async () => {
+    await put(`/api/patients/${patient.id}/rx/${el.dataset.item}`, { item: el.dataset.item, label: el.value });
+    await loadPatients(patient.id);
+  });
+  $('rxEdit').querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    await api(`/api/patients/${patient.id}/rx/${b.dataset.del}`, { method: 'DELETE' });
+    await loadPatients(patient.id);
+  });
+}
+
+let searchTimer;
+$('drugQ').oninput = () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(async () => {
+    const q = $('drugQ').value.trim();
+    if (!q) return $('hits').classList.add('hidden');
+    const hits = await api('/api/drugs?q=' + encodeURIComponent(q));
+    $('hits').innerHTML = hits.map(d => `<div data-item="${d.item}">${esc(d.name)}<small>${d.item} · ${esc(d.color)} / ${esc(d.shape)} / ${esc(d.imprint || '각인 없음')}</small></div>`).join('')
+      || '<div>검색 결과 없음</div>';
+    $('hits').classList.remove('hidden');
+    $('hits').querySelectorAll('[data-item]').forEach(el => el.onclick = async () => {
+      const label = prompt('표시 이름 (예: 혈압약 A). 비워도 됩니다.', '') ?? null;
+      if (label === null) return;
+      await post(`/api/patients/${patient.id}/rx`, { item: el.dataset.item, label });
+      $('drugQ').value = '';
+      $('hits').classList.add('hidden');
+      await loadPatients(patient.id);
+    });
+  }, 250);
+};
 
 function renderRx() {
   const done = given[patient.id];
   $('rxList').innerHTML = patient.rx.map((r, i) => `
     <div class="rx ${done[r.item] ? 'done' : ''} ${target === i ? 'on' : ''}" data-i="${i}">
       <div>
-        <b>${i + 1}. ${esc(r.label)} · ${esc(r.name)}</b>
+        <b>${i + 1}. ${r.label ? esc(r.label) + ' · ' : ''}${esc(r.name)}</b>
         <small>${esc(r.color)} / ${esc(r.shape)} / 각인 ${esc(r.imprint || '없음')}</small>
       </div>
       <span>${done[r.item] ? '투약 완료' : target === i ? '촬영 대기' : '선택'}</span>
