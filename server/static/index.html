@@ -54,6 +54,7 @@
   #cv { width: 100%; display: none; touch-action: none; cursor: crosshair; }
   #guide { padding: 20px; text-align: center; font-size: .9rem; line-height: 1.5; color: var(--sub); }
   #guide b { display: block; margin-bottom: 6px; font-size: 1rem; color: var(--text); }
+  .guide-logo { display: block; width: 180px; height: auto; margin: 4px auto 14px; opacity: .35; }
   #busy { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(255,255,255,.9); font-weight: 600; font-size: .88rem; }
   .spinner { width: 32px; height: 32px; border: 4px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -173,7 +174,7 @@
   </section>
 
   <section id="viewer">
-    <div id="guide"><b id="guideTitle">알약 한 알을 촬영하세요</b>한 장에 한 알, 단색 바탕 위에 놓고 찍어 주세요.</div>
+    <div id="guide"><img class="guide-logo" src="/logo.png" alt=""><b id="guideTitle">알약 한 알을 촬영하세요</b>한 장에 한 알, 단색 바탕 위에 놓고 찍어 주세요.</div>
     <canvas id="cv"></canvas>
     <div id="busy"><div class="spinner"></div><div id="busyText"></div></div>
   </section>
