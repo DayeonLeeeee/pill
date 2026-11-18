@@ -8,7 +8,8 @@
   "margin_threshold": 0.06666684150695801,
   "score_round_decimals": 7,
   "threshold_source": "validation19454 only, accepted-accuracy target .95 Wilson rule",
-  "calibrated_for_catalog_sha256": "ab6042e2b877208319e338e8983eb72a706d1fea1cd090dda56a91a375352018",
+  "calibrated_for_catalog_sha256": "a2f4d6e692fa51c735219fe73df8fd454fb1aedeeda5560b575db63f2cdd7761",
+  "catalog_edits_after_calibration": "2026-11-18 K-013626 타이레놀콜드-에스정: 비어 있던 색·모양·각인 채움. 품목 1개라 보류 기준은 그대로 씀",
   "observed_external4100": {
     "top1": 0.6941463414634146,
     "rejection_rate": 0.4953658536585366,
