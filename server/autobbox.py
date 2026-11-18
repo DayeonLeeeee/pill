@@ -49,3 +49,20 @@ def find_pill(rgb):
     if min(bw, bh) < 16:
         return None
     return [x, y, bw, bh]
+
+
+def snap_to_pill(rgb, bbox):
+    # 손으로 그린 상자가 알약보다 크면 모양 모델이 '기타'로 읽는다 (상자가 알약의 1.3배를 넘으면).
+    # 상자 안에서 알약을 다시 찾아 딱 맞게 줄인다. 못 찾으면 원래 상자 그대로.
+    H, W = rgb.shape[:2]
+    x, y, w, h = bbox
+    m = round(0.1 * max(w, h))
+    X0, Y0 = max(0, x - m), max(0, y - m)
+    X1, Y1 = min(W, x + w + m), min(H, y + h + m)
+    found = find_pill(rgb[Y0:Y1, X0:X1])
+    if not found:
+        return bbox
+    fx, fy, fw, fh = found
+    if fw * fh < 0.15 * w * h:  # 너무 작으면 알약이 아니라 얼룩
+        return bbox
+    return [X0 + fx, Y0 + fy, fw, fh]

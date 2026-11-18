@@ -27,7 +27,7 @@ IMAGES.mkdir(parents=True, exist_ok=True)
 KST = timezone(timedelta(hours=9))
 
 sys.path.insert(0, str(BUNDLE))
-from autobbox import find_pill  # noqa: E402
+from autobbox import find_pill, snap_to_pill  # noqa: E402
 from ocr_rotation import use_max_score  # noqa: E402
 from verdict import judge  # noqa: E402
 
@@ -293,7 +293,8 @@ async def predict(
     else:
         raise HTTPException(400, "image 또는 image_id가 필요합니다")
 
-    box = json.loads(bbox) if bbox else find_pill(np.asarray(im))
+    rgb = np.asarray(im)
+    box = snap_to_pill(rgb, [int(v) for v in json.loads(bbox)]) if bbox else find_pill(rgb)
     rx = rx_items(patient_id)
     pred = None
     if box:

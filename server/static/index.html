@@ -452,7 +452,7 @@ async function openPhoto(file) {
     cv.style.display = 'block';
     $('boxHint').classList.remove('hidden');
     $('boxHint').textContent = bbox
-      ? '초록 상자가 찾은 알약 위치입니다. 틀리면 사진 위를 드래그해 다시 그려 주세요.'
+      ? '초록 상자가 찾은 알약 위치입니다. 틀리면 사진 위를 드래그해 알약을 감싸 주세요. 넉넉하게 그려도 알약에 맞게 줄여 줍니다.'
       : '알약 위치를 찾지 못했습니다. 사진 위를 드래그해 알약을 감싸 주세요.';
     draw();
     $('checkBtn').disabled = false;
