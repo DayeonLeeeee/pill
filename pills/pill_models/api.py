@@ -6,7 +6,7 @@ from PIL import Image
 import torch
 from torch import nn
 from torchvision.models import convnext_tiny
-from .appearance_models import ColorClassifier,ShapeClassifier
+from .appearance_models import ColorClassifier,LargeColorClassifier,ShapeClassifier
 from .labels import COLORS,COLOR_NAMES,COLOR_SETS,SHAPES
 from .ocr.reader import Reader
 from .ocr.portable_data import choose_device
@@ -38,6 +38,13 @@ def appearance_inputs(im,bbox):
     l=(l-torch.tensor([.485,.456,.406])[:,None,None])/torch.tensor([.229,.224,.225])[:,None,None]
     return c,s,l
 
+def large_color_input(im,bbox):
+    # 색 모델 v2: 같은 넓은 자르기, 320 그대로, ImageNet 정규화
+    x,y,w,h=bbox;pad=max(8,int(max(w,h)*.12))
+    wide=fit(im.crop((max(0,x-pad),max(0,y-pad),min(im.width,x+w+pad),min(im.height,y+h+pad))),320)
+    c=torch.from_numpy(np.asarray(wide).copy()).permute(2,0,1).float()/255
+    return (c-torch.tensor([.485,.456,.406])[:,None,None])/torch.tensor([.229,.224,.225])[:,None,None]
+
 def top(prob,names,n=3):
     order=np.argsort(-prob,kind='stable')[:n]
     return [dict(label=names[i],class_index=int(i),probability=float(prob[i])) for i in order]
@@ -52,8 +59,12 @@ class PillRecognizer:
             for name,entry in self.manifest['models'].items():
                 path=self.root/entry['package_path']
                 if sha(path)!=entry['sha256']:raise ValueError('Weight SHA-256 mismatch: '+name)
-        self.color_model=ColorClassifier(120);self.shape_model=ShapeClassifier(11);self.score_model=ScoreModel()
-        for model,name in [(self.color_model,'color.pt'),(self.shape_model,'shape.pt'),(self.score_model,'score.pt')]:
+        color_state=torch.load(self.root/'weights/color.pt',map_location='cpu',weights_only=True)
+        self.large_color=color_state.get('architecture')=='resnet50'
+        self.color_model=LargeColorClassifier(120) if self.large_color else ColorClassifier(120)
+        self.color_model.load_state_dict(color_state['model']);self.color_model.to(self.device).eval()
+        self.shape_model=ShapeClassifier(11);self.score_model=ScoreModel()
+        for model,name in [(self.shape_model,'shape.pt'),(self.score_model,'score.pt')]:
             state=torch.load(self.root/'weights'/name,map_location='cpu',weights_only=True);model.load_state_dict(state['model']);model.to(self.device).eval()
         self.ocr_reader=Reader(weights=self.root/'weights/parseq_v12.pt',device=str(self.device),threads=int(threads))
 
@@ -75,6 +86,7 @@ class PillRecognizer:
         bbox=list(map(int,bbox));x,y,w,h=bbox
         if min(x,y)<0 or min(w,h)<16 or x+w>width or y+h>height:raise ValueError('bbox must stay inside the original image and have width/height of at least 16 pixels')
         c,s,l=appearance_inputs(im,bbox)
+        if self.large_color:c=large_color_input(im,bbox)
         with self._amp():
             cp=self.color_model(c[None].to(self.device)).float().softmax(-1)[0].cpu().numpy()
             sp=self.shape_model(s[None].to(self.device)).float().softmax(-1)[0].cpu().numpy()

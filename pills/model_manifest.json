@@ -3,8 +3,8 @@
     "color.pt": {
       "package_path": "weights/color.pt",
       "source_path": "C:\\Users\\COMPUTER\\Documents\\Codex\\2026-11-07\\dlrj\\outputs\\경구약제_독립계층모델_v4\\deployment\\color.pt",
-      "bytes": 45254535,
-      "sha256": "afa73d84fd26afa03d5501cc68940ca59bbfbee914141ff4ee0d201e724d19bf"
+      "bytes": 96096315,
+      "sha256": "87b7d957338c1d0b15796538e9cd140c89ccddac5b763995f8035fad115b2be3"
     },
     "shape.pt": {
       "package_path": "weights/shape.pt",
