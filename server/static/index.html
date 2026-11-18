@@ -236,7 +236,7 @@ function post(path, data) {
   return api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
 }
 
-// 알림은 화면 아래 메시지로 (일부 앱 내 브라우저는 alert·prompt·confirm 창을 막는다)
+// 카톡 인앱 브라우저 등에서 alert/prompt가 막혀서 토스트로
 let toastTimer;
 function toast(text, isError) {
   const t = $('toast');
@@ -312,7 +312,6 @@ function selectPatient(id, keepPhoto) {
   if (patient.id) syncGiven(patient.id);
 }
 
-// 오늘 '투약 완료'로 기록된 약은 새로고침해도 완료로 보이게
 async function syncGiven(id) {
   const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
   const logs = await api('/api/logs?patient_id=' + id);
@@ -322,7 +321,6 @@ async function syncGiven(id) {
   if (patient.id === id) renderRx();
 }
 
-// 환자·처방 수정
 $('editBtn').onclick = () => {
   $('editBox').classList.toggle('hidden');
   $('editBtn').textContent = $('editBox').classList.contains('hidden') ? '수정' : '닫기';
@@ -351,7 +349,6 @@ $('saveNameBtn').onclick = async () => {
   await loadPatients(patient.id);
   toast('이름을 저장했습니다');
 };
-// 삭제는 두 번 눌러야 한다 (확인 창 대신)
 let deleteArmed = null;
 $('delPatientBtn').onclick = async () => {
   const b = $('delPatientBtn');
@@ -498,7 +495,6 @@ function draw(color = '#22c55e', label) {
   }
 }
 
-// 사진 위를 드래그해서 상자를 다시 그림
 let dragFrom = null;
 function imagePoint(e) {
   const r = cv.getBoundingClientRect();
@@ -568,7 +564,6 @@ function evidence(r, t) {
 const PILL_COLORS = { 하양: '#f7f7f4', 노랑: '#f3dc6b', 주황: '#f2a057', 분홍: '#f4b3c6', 빨강: '#dc5050', 갈색: '#9a6a42',
   연두: '#b6dd77', 초록: '#4fae6c', 청록: '#38b0a5', 파랑: '#4a7fd6', 남색: '#2d3f8e', 자주: '#9a3a8a', 보라: '#8d6ad0', 회색: '#a3a7ab', 검정: '#2b2b2b' };
 
-// DB 정보(색·모양·각인)로 그린 알약 그림
 function pillSVG(colorText, shape, imprint, w = 104, h = 78) {
   const cols = colorText.split('+').map(c => PILL_COLORS[c]).filter(Boolean);
   const [c1, c2] = [cols[0] || '#e5e7eb', cols[1] || cols[0] || '#e5e7eb'];
@@ -597,7 +592,6 @@ function pillSVG(colorText, shape, imprint, w = 104, h = 78) {
   </svg>`;
 }
 
-// 다른 후보 한 줄 설명: "각인 일치", "각인 일부 유사", "형상·색상 유사" 식
 function similarity(t) {
   const m = t.match, parts = [];
   const s = m.imprint.score;
@@ -686,7 +680,6 @@ function resultHTML(r, imageId) {
   return html;
 }
 
-// 다른 후보를 누르면 그 후보로 카드 내용을 바꾼다
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-cand]');
   const holder = b && b.closest('[data-result]');

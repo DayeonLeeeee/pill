@@ -1,4 +1,3 @@
-# 단색 배경 위 알약 한 알의 위치(x, y, w, h)를 찾는다. 못 찾으면 None.
 import cv2
 import numpy as np
 
@@ -11,13 +10,12 @@ def find_pill(rgb):
     lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB).astype(np.float32)
     h, w = lab.shape[:2]
 
-    # 테두리 색을 배경으로 본다
     b = max(4, min(h, w) // 25)
     edge = np.concatenate([lab[:b], lab[-b:], lab[:, :b].transpose(1, 0, 2), lab[:, -b:].transpose(1, 0, 2)], axis=None)
     bg = np.median(edge.reshape(-1, 3), axis=0)
 
     d = lab - bg
-    # 그림자(배경보다 어둡고 색은 비슷)를 덜 잡도록 어두워지는 쪽은 약하게
+    # 그림자 덜 잡게
     dl = np.where(d[..., 0] > 0, 0.5, 0.2) * d[..., 0]
     dist = np.sqrt(dl ** 2 + d[..., 1] ** 2 + d[..., 2] ** 2)
     dist = cv2.normalize(dist, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
@@ -34,7 +32,6 @@ def find_pill(rgb):
             continue
         if x == 0 or y == 0 or x + bw >= w or y + bh >= h:
             continue
-        # 크고 가운데에 가까운 덩어리
         off = np.hypot(centers[i][0] - w / 2, centers[i][1] - h / 2) / np.hypot(w / 2, h / 2)
         score = area * (1 - 0.7 * off)
         if score > best_score:
@@ -43,7 +40,7 @@ def find_pill(rgb):
         return None
 
     x, y, bw, bh = (round(v / scale) for v in best)
-    pad = round(0.06 * max(bw, bh))  # 학습 때 박스처럼 여백을 조금
+    pad = round(0.06 * max(bw, bh))
     x, y = max(0, x - pad), max(0, y - pad)
     bw, bh = min(bw + 2 * pad, W - x), min(bh + 2 * pad, H - y)
     if min(bw, bh) < 16:
@@ -52,8 +49,7 @@ def find_pill(rgb):
 
 
 def snap_to_pill(rgb, bbox):
-    # 손으로 그린 상자가 알약보다 크면 모양 모델이 '기타'로 읽는다 (상자가 알약의 1.3배를 넘으면).
-    # 상자 안에서 알약을 다시 찾아 딱 맞게 줄인다. 못 찾으면 원래 상자 그대로.
+    # 상자가 알약보다 1.3배쯤 커지면 shape 모델이 '기타'로 읽음
     H, W = rgb.shape[:2]
     x, y, w, h = bbox
     m = round(0.1 * max(w, h))
@@ -63,6 +59,6 @@ def snap_to_pill(rgb, bbox):
     if not found:
         return bbox
     fx, fy, fw, fh = found
-    if fw * fh < 0.15 * w * h:  # 너무 작으면 알약이 아니라 얼룩
+    if fw * fh < 0.15 * w * h:
         return bbox
     return [X0 + fx, Y0 + fy, fw, fh]

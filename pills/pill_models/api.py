@@ -39,7 +39,6 @@ def appearance_inputs(im,bbox):
     return c,s,l
 
 def large_color_input(im,bbox):
-    # 색 모델 v2: 같은 넓은 자르기, 320 그대로, ImageNet 정규화
     x,y,w,h=bbox;pad=max(8,int(max(w,h)*.12))
     wide=fit(im.crop((max(0,x-pad),max(0,y-pad),min(im.width,x+w+pad),min(im.height,y+h+pad))),320)
     c=torch.from_numpy(np.asarray(wide).copy()).permute(2,0,1).float()/255
