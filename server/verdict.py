@@ -1,10 +1,10 @@
 # 처방 대조 판정
-# 1) 각인을 믿을 수 있으면: 각인으로 거르고 색 -> 분할선 -> 모양 순으로 고른다
+# 1) 각인을 믿을 수 있으면: 각인으로 거르고, 그 안에서 검색 점수가 높은 순
 # 2) 아니면: 패키지의 점수 검색 (네 속성 같은 비중, 점수 차가 기준보다 작으면 보류)
 # 1순위가 처방에 있으면 일치 후보, 없으면 불일치 의심
 import re
 
-from pill_models.labels import COLOR_SETS, COLORS, SHAPES
+from pill_models.labels import COLORS
 from pill_models.search import edit_distance
 
 TOP_K = 5
@@ -94,39 +94,7 @@ def compare(pred, row):
     }
 
 
-# 비슷한 색은 부분 점수 (0.5). 짝은 서로 헷갈리기 쉬운 이웃 색
-NEAR_COLORS = [
-    ("하양", "회색"), ("하양", "노랑"), ("노랑", "주황"), ("노랑", "연두"), ("주황", "빨강"), ("주황", "갈색"),
-    ("분홍", "빨강"), ("분홍", "자주"), ("빨강", "갈색"), ("연두", "초록"), ("초록", "청록"), ("청록", "파랑"),
-    ("파랑", "남색"), ("남색", "보라"), ("남색", "검정"), ("보라", "자주"), ("회색", "검정"),
-]
-NEAR = {frozenset(p) for p in NEAR_COLORS}
-CONF_MIN = 0.5  # 이 속성으로 1·2위가 갈릴 때, 모델 확신도가 이보다 낮으면 보류
-
-
-def color_sim(a, b):
-    return 1.0 if a == b else 0.5 if frozenset((a, b)) in NEAR else 0.0
-
-
-def color_set_sim(pred, db):
-    if not db:
-        return 0.5  # DB에 색 정보 없음
-    total = sum(max(color_sim(a, b) for b in db) for a in pred) + sum(max(color_sim(a, b) for a in pred) for b in db)
-    return total / (len(pred) + len(db))
-
-
-def db_colors(row):
-    return {c.strip() for k in ("color_class1", "color_class2") for c in (row[k] or "").split(",") if c.strip() in COLORS}
-
-
-def attr_scores(pred, row, face):
-    probs = pred["probabilities"]
-    colors = db_colors(row)
-    color = sum(p * color_set_sim({COLORS[i] for i in COLOR_SETS[k]}, colors) for k, p in enumerate(probs["color"]) if p > 1e-4)
-    line_id = {"": 0, "-": 1, "+": 2}.get(row["line_" + face])
-    line = probs["score_line"][line_id] if line_id is not None else probs["score_line"][1] + probs["score_line"][2]
-    shape = probs["shape"][SHAPES.index(row["drug_shape"])] if row["drug_shape"] in SHAPES else 0.5
-    return round(color, 2), round(line, 2), round(shape, 2)
+CONF_MIN = 0.5  # 모양 확신도가 이 이상인데 각인이 가리킨 약과 모양이 다르면 보류
 
 
 def imprint_candidates(q, catalog):
@@ -148,8 +116,8 @@ def imprint_candidates(q, catalog):
     return sims
 
 
-def imprint_first(pred, catalog):
-    """각인으로 거른 뒤 색 -> 분할선 -> 모양 순으로 고른다. OCR을 못 믿을 땐 None (기존 점수 검색 사용)."""
+def imprint_first(pred, catalog, ranks):
+    """각인으로 거른 뒤 (각인 유사도, 검색 점수) 높은 순. OCR을 못 믿을 땐 None (기존 점수 검색 사용)."""
     q = norm(pred["ocr"]["text"])
     if not q or pred["ocr"].get("agreeing_angles", 0) < 2:
         return None
@@ -158,16 +126,8 @@ def imprint_first(pred, catalog):
     if best < 0.6:
         return None
     group = [i for i, (s, _) in sims.items() if s >= best - 0.1]
-    # 확신도가 낮은 속성은 순서 정하는 데 쓰지 않는다 (모두 같은 값으로)
-    use = [conf >= CONF_MIN for _, conf in attr_confidence(pred)]
-    keyed = sorted(((tuple(s if u else 0 for s, u in zip(attr_scores(pred, catalog[i], sims[i][1]), use)), sims[i][0], i)
-                    for i in group), reverse=True)
-    return [i for _, _, i in keyed], {i: k for k, _, i in keyed}, [name for (name, _), u in zip(attr_confidence(pred), use) if not u]
-
-
-def attr_confidence(pred):
-    return [("색", pred["color"]["confidence"]), ("분할선", max(pred["probabilities"]["score_line"])),
-            ("모양", pred["shape"]["confidence"])]
+    group.sort(key=lambda i: (-round(sims[i][0], 2), -ranks[i][1], ranks[i][0]))
+    return group, sims
 
 
 def judge(pred, catalog, rx_items, bbox_ok=True):
@@ -182,26 +142,32 @@ def judge(pred, catalog, rx_items, bbox_ok=True):
         return [{"item": i, "name": catalog[i]["name"], "rank": ranks[i][0], "score": ranks[i][1],
                  "in_rx": i in rx_items, "match": compare(pred, catalog[i])} for i in items]
 
-    found = imprint_first(pred, catalog)
+    found = imprint_first(pred, catalog, ranks)
     if found:
-        group, keys, skipped = found
+        group, sims = found
         top = rows((group + [i for i in baseline if i not in group])[:TOP_K])
         first = top[0]
         q = norm(pred["ocr"]["text"])
         reasons = [f"각인 '{q}'(으)로 거른 후보 {len(group)}개" + ("" if len(group) > 1 else f": [{first['name']}] (점수 검색으로는 {first['rank']}위)")]
-        if skipped and len(group) > 1:
-            reasons.append(", ".join(skipped) + f"은(는) 확신도가 {CONF_MIN:.0%} 미만이라 쓰지 않음")
         if len(group) > 1:
-            second = group[1]
-            diff = next((n for n in range(3) if keys[group[0]][n] != keys[second][n]), None)
-            if diff is None:
-                ties = sum(keys[i] == keys[group[0]] for i in group)
-                reasons.append(f"남은 속성까지 같은 약이 {ties}개라 사진만으로 구별 안 됨")
-                if any(t["in_rx"] for t in top):
-                    reasons.append("후보 중 처방약: " + ", ".join(t["name"] for t in top if t["in_rx"]))
-                return "판단 보류", "후보끼리 구분이 어려움", reasons, top
-            reasons.append(f"{attr_confidence(pred)[diff][0]}(으)로 1순위 결정 (2순위 [{catalog[second]['name']}])")
-        wrong = [ATTR_NAME[k] for k in ("color", "shape", "line") if not first["match"][k]["ok"]]
+            second = top[1]
+            if round(sims[first["item"]][0], 2) > round(sims[second["item"]][0], 2):
+                reasons.append(f"각인이 가장 잘 맞음 (2순위 [{second['name']}])")
+            else:
+                gap = first["score"] - second["score"]
+                threshold = search["margin_threshold"]
+                if gap < threshold:
+                    reasons.append(f"각인이 같은 후보끼리 점수 차 {gap:.3f} < 기준 {threshold:.3f}")
+                    if any(t["in_rx"] for t in top):
+                        reasons.append("후보 중 처방약: " + ", ".join(t["name"] for t in top if t["in_rx"]))
+                    return "판단 보류", "후보끼리 구분이 어려움", reasons, top
+                reasons.append(f"각인이 같은 후보 중 점수가 가장 높음 (2순위 [{second['name']}], 차 {gap:.3f})")
+        # 모양은 실제 사진에서도 잘 맞는다. 각인이 가리킨 약과 모양이 다르면 각인을 잘못 읽었을 가능성이 크다
+        shape = first["match"]["shape"]
+        if not shape["ok"] and pred["shape"]["confidence"] >= CONF_MIN:
+            reasons.append(f"그런데 모양이 다름 (사진 {shape['pred']}, DB {shape['catalog']}) - 각인을 잘못 읽었을 수 있음")
+            return "판단 보류", "각인과 모양이 맞지 않음", reasons, top
+        wrong = [ATTR_NAME[k] for k in ("color", "line") if not first["match"][k]["ok"]]
         if wrong:
             reasons.append(", ".join(wrong) + "은(는) DB와 다르게 읽힘 (조명·배경 영향일 수 있음)")
         if first["in_rx"]:
