@@ -1,4 +1,4 @@
-# pills 데모 서버
+# Pill수확인 데모 서버
 
 모델 패키지(pills/, 받은 PillModels4 폴더 이름만 바꾼 것)를 불러 쓰는 FastAPI 서버. 화면(static/index.html)도 같이 띄운다.
 
