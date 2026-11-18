@@ -37,7 +37,7 @@ with open(BUNDLE / "database/catalog.jsonl", encoding="utf8") as f:
 
 model = None
 model_error = None
-model_lock = threading.Lock()  # 모델 하나를 요청끼리 나눠 씀
+model_lock = threading.Lock()
 
 
 def load_model():
@@ -46,7 +46,7 @@ def load_model():
         from pill_models import PillRecognizer
         m = PillRecognizer(BUNDLE, device=os.environ.get("DEVICE", "auto"), threads=int(os.environ.get("TORCH_THREADS", 2)))
         use_max_score(m)
-        # 첫 요청이 느리지 않게 한 번 돌려 둔다 (DB 검색도 이때 로드됨)
+        # warm-up
         ex = json.loads((BUNDLE / "examples/inputs.json").read_text("utf8"))[0]
         m.predict(BUNDLE / "examples" / ex["image"], bbox=ex["bbox"], search=True)
         model = m
@@ -77,7 +77,7 @@ with db() as con:
         status text, result_json text, actions text default '[]')""")
     con.execute("create table if not exists patients (id text primary key, name text)")
     con.execute("create table if not exists rx (patient_id text, item text, label text, position integer, primary key (patient_id, item))")
-    # 처음 켤 때만 demo_config.json의 환자·처방을 넣는다
+    # 빈 DB면 데모 환자 넣기
     if not con.execute("select 1 from patients").fetchone():
         for p in config["patients"]:
             con.execute("insert into patients values (?, ?)", (p["id"], p["name"]))
@@ -186,7 +186,6 @@ def rename_patient(patient_id: str, p: PatientIn):
 
 @app.delete("/api/patients/{patient_id}")
 def delete_patient(patient_id: str):
-    # 확인 기록은 남긴다
     with db() as con:
         con.execute("delete from rx where patient_id = ?", (patient_id,))
         if not con.execute("delete from patients where id = ?", (patient_id,)).rowcount:
@@ -228,7 +227,6 @@ def delete_rx(patient_id: str, item: str):
 
 @app.get("/api/drugs")
 def search_drugs(q: str):
-    # 처방 추가용: 이름, 품목코드, 각인으로 찾기
     q = q.strip()
     if not q:
         return []
@@ -256,7 +254,6 @@ def get_image(image_id: str):
 
 @app.get("/api/images/{image_id}/crop")
 def get_crop(image_id: str, x: int, y: int, w: int, h: int):
-    # 결과 화면용 알약 부분 (둘레 여백 조금)
     im = Image.open(image_path(image_id))
     pad = int(max(w, h) * 0.15)
     crop = im.crop((max(0, x - pad), max(0, y - pad), min(im.width, x + w + pad), min(im.height, y + h + pad)))
@@ -268,7 +265,7 @@ def get_crop(image_id: str, x: int, y: int, w: int, h: int):
 
 def run_model(path, bbox):
     with model_lock:
-        pred = model.predict(path, bbox=bbox, search=True, top_k=len(catalog), include_probabilities=True)  # 전체 순위 (각인으로 끌어올린 약의 점수도 보이게)
+        pred = model.predict(path, bbox=bbox, search=True, top_k=len(catalog), include_probabilities=True)
         pred["ocr"]["agreeing_angles"] = model.ocr_reader.last["agreeing_angles"]
         return pred
 
@@ -341,7 +338,6 @@ def logs(patient_id: str | None = None):
 
 @app.get("/api/review_queue")
 def review_queue():
-    # 판단 보류·불일치 의심 중 약사가 아직 처리 안 한 것
     with db() as con:
         rows = con.execute("select * from logs where verdict in ('판단 보류', '불일치 의심')"
                            " and status not like '처리 완료%' order by id desc")
@@ -382,7 +378,6 @@ def demo_image(i: int):
 
 @app.middleware("http")
 async def no_cache(request, call_next):
-    # 화면 파일을 브라우저가 예전 것으로 들고 있지 않게 (서버만 새 버전이면 화면이 깨짐)
     response = await call_next(request)
     if not request.url.path.startswith("/api/"):
         response.headers["Cache-Control"] = "no-cache"

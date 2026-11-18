@@ -1,18 +1,12 @@
-# 처방 대조 판정
-# 1) 각인을 믿을 수 있으면: 각인으로 거르고, 그 안에서 검색 점수가 높은 순
-# 2) 아니면: 패키지의 점수 검색 (네 속성 같은 비중, 점수 차가 기준보다 작으면 보류)
-# 1순위가 처방에 있으면 일치 후보, 없으면 불일치 의심
 import re
 
 from pill_models.labels import COLOR_SETS, COLORS, SHAPES
 from pill_models.search import edit_distance
 
 TOP_K = 5
-IMPRINT_MIN = 0.5  # 임시값. 검증셋으로 다시 정할 것
+IMPRINT_MIN = 0.5  # TODO 검증셋으로 다시
 
-# DB 각인 정답에 섞여 있는 설명어
 NOTES = ("십자분할선", "분할선", "마크")
-# OCR이 자주 헷갈리는 글자
 LOOKALIKE = str.maketrans("ODQILSBZG", "000115826")
 LINE_NAME = {"": "없음", "-": "-", "+": "+", "기타": "기타"}
 ATTR_NAME = {"color": "색", "shape": "모양", "line": "분할선", "imprint": "각인"}
@@ -23,8 +17,7 @@ def norm(s):
 
 
 def read_face(row, side):
-    # 반환: (영문·숫자만 남긴 각인, 면 종류)
-    # 종류: text 글자만 / partial 글자+로고·한글 / logo 로고·한글만 / blank 없음
+    # kind: text / partial(글자+로고) / logo / blank
     text, extra = "", False
     for p in row["print_" + side]:
         extra |= "마크" in p
@@ -39,21 +32,19 @@ def read_face(row, side):
 
 def similarity(q, ref, kind):
     if kind == "logo":
-        return None  # 로고는 OCR이 못 읽음
+        return None
     if kind == "blank":
-        return 1.0 if len(q) <= 1 else 0.0  # 한 글자는 잡음으로 봄
+        return 1.0 if len(q) <= 1 else 0.0
     a, b = norm(q).translate(LOOKALIKE), ref.translate(LOOKALIKE)
     if not a:
         return 0.0
     sim = 1 - edit_distance(a, b) / max(len(a), len(b))
-    # 일부만 읽혀도 인정
     if len(a) >= 2 and (a in b or (b in a and (len(b) >= 2 or kind == "partial"))):
         sim = max(sim, 0.9)
     return sim
 
 
 def match_imprint(ocr, row):
-    # 어느 면을 찍었는지 모르니 더 잘 맞는 면을 쓴다
     q = norm(ocr)
     best, face, logo = None, "front", False
     for side in ("front", "back"):
@@ -79,7 +70,6 @@ def imprint_conflict(ocr, row):
 
 
 def compare(pred, row):
-    # 속성별 일치 여부와 일치도(0~1). 일치도는 패키지 검색 점수와 같은 방식
     probs = pred["probabilities"]
     colors = set(pred["color"]["colors"])
     db_colors = {c.strip() for k in ("color_class1", "color_class2")
@@ -103,15 +93,11 @@ def compare(pred, row):
     }
 
 
-# 각인이 가리킨 약과 모양이 다를 때, 모양 모델 확신도가 이 이상이면 보류한다.
-# '기타'는 어느 모양인지 모르겠다는 뜻이라 보류 근거로 쓰지 않는다.
 SHAPE_CONF_MIN = 0.5
 
 
 def imprint_candidates(q, catalog):
-    # 편집거리로 비교. 빈 면은 보지 않는다.
-    # DB 각인이 실제보다 짧게 적힌 경우가 있어서(예: 실제 GS 5YZ 300, DB엔 GS5YZ) 4글자 이상이 통째로
-    # 들어 있으면 0.85를 준다. 완전히 맞는 약(1.0)이 있으면 0.85는 거르는 범위(최고 -0.1) 밖이라 끼지 않는다.
+    # DB 각인이 짧게 적힌 약이 있어서 (GS5YZ300 vs GS5YZ) 포함되면 0.85
     a = q.translate(LOOKALIKE)
     sims = {}
     for item, row in catalog.items():
@@ -128,7 +114,6 @@ def imprint_candidates(q, catalog):
 
 
 def imprint_first(pred, catalog, ranks):
-    """각인으로 거른 뒤 (각인 유사도, 검색 점수) 높은 순. OCR을 못 믿을 땐 None (기존 점수 검색 사용)."""
     q = norm(pred["ocr"]["text"])
     if not q or pred["ocr"].get("agreeing_angles", 0) < 2:
         return None
@@ -173,7 +158,7 @@ def judge(pred, catalog, rx_items, bbox_ok=True):
                         reasons.append("후보 중 처방약: " + ", ".join(t["name"] for t in top if t["in_rx"]))
                     return "판단 보류", "후보끼리 구분이 어려움", reasons, top
                 reasons.append(f"각인이 같은 후보 중 점수가 가장 높음 (2순위 [{second['name']}], 차 {gap:.3f})")
-        # 모양은 실제 사진에서도 잘 맞는다. 각인이 가리킨 약과 모양이 다르면 각인을 잘못 읽었을 가능성이 크다
+        # OCR이 다른 약 각인을 지어내는 경우 (YH CNT 등)
         shape = first["match"]["shape"]
         if not shape["ok"] and shape["pred"] != "기타" and pred["shape"]["confidence"] >= SHAPE_CONF_MIN:
             reasons.append(f"그런데 모양이 다름 (사진 {shape['pred']}, DB {shape['catalog']}) - 각인을 잘못 읽었을 수 있음")
@@ -186,7 +171,7 @@ def judge(pred, catalog, rx_items, bbox_ok=True):
         reasons.append(f"[{first['name']}]은 오늘 처방에 없음")
         return "불일치 의심", "처방에 없는 약으로 보임", reasons, top
 
-    # 각인을 못 믿을 때: 기존 점수 검색 (색·모양·분할선·각인 같은 비중)
+    # OCR 못 믿으면 패키지 검색 그대로
     top = rows(baseline)
     first = top[0]
     rx_found = ", ".join(t["name"] for t in top if t["in_rx"])

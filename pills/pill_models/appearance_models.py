@@ -56,8 +56,7 @@ class ColorClassifier(HierarchicalClassifier):
 
 
 class LargeColorClassifier(nn.Module):
-    """색 모델 v2 (pill-color-large-cnn-v1): ImageNet 초기화 ResNet50, layer2~4 풀링 -> LayerNorm(3584) -> Linear(120).
-    입력은 320x320 RGB, ImageNet 평균·표준편차로 정규화."""
+    # color v2: resnet50, 320px, imagenet norm
     input_mode = 'RGB'
     image_size = 320
 

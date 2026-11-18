@@ -1,5 +1,4 @@
-# weights/에 가중치가 없으면 WEIGHTS_URL_BASE에서 받는다 (GitHub에는 100MB 넘는 파일을 못 올려서)
-# 예: WEIGHTS_URL_BASE=https://github.com/<계정>/<저장소>/releases/download/v1
+# 가중치는 GitHub Release에서 받음 (WEIGHTS_URL_BASE)
 import hashlib
 import json
 import os
