@@ -4,7 +4,7 @@
 # 1순위가 처방에 있으면 일치 후보, 없으면 불일치 의심
 import re
 
-from pill_models.labels import COLORS
+from pill_models.labels import COLOR_SETS, COLORS, SHAPES
 from pill_models.search import edit_distance
 
 TOP_K = 5
@@ -79,18 +79,27 @@ def imprint_conflict(ocr, row):
 
 
 def compare(pred, row):
+    # 속성별 일치 여부와 일치도(0~1). 일치도는 패키지 검색 점수와 같은 방식
+    probs = pred["probabilities"]
     colors = set(pred["color"]["colors"])
     db_colors = {c.strip() for k in ("color_class1", "color_class2")
                  for c in (row[k] or "").split(",") if c.strip() in COLORS}
+    color_score = 0.5 if not db_colors else sum(
+        p * len({COLORS[i] for i in COLOR_SETS[k]} & db_colors) / len({COLORS[i] for i in COLOR_SETS[k]} | db_colors)
+        for k, p in enumerate(probs["color"]) if p > 1e-4)
     imprint = match_imprint(pred["ocr"]["text"], row)
     line = pred["score_line"]["label"]
     db_line = LINE_NAME.get(row["line_" + imprint["face"]], "?")
+    line_id = {"없음": 0, "-": 1, "+": 2}.get(db_line)
+    line_score = probs["score_line"][line_id] if line_id is not None else 0.5
     shape = pred["shape"]["label"]
+    shape_score = probs["shape"][SHAPES.index(row["drug_shape"])] if row["drug_shape"] in SHAPES else 0.5
     return {
-        "color": {"ok": colors == db_colors, "pred": "+".join(sorted(colors)), "catalog": "+".join(sorted(db_colors)) or "?"},
-        "shape": {"ok": shape == row["drug_shape"], "pred": shape, "catalog": row["drug_shape"]},
-        "line": {"ok": line == db_line, "pred": line, "catalog": db_line},
-        "imprint": imprint,
+        "color": {"ok": colors == db_colors, "pred": "+".join(sorted(colors)), "catalog": "+".join(sorted(db_colors)) or "?",
+                  "score": round(color_score, 3)},
+        "shape": {"ok": shape == row["drug_shape"], "pred": shape, "catalog": row["drug_shape"], "score": round(shape_score, 3)},
+        "line": {"ok": line == db_line, "pred": line, "catalog": db_line, "score": round(line_score, 3)},
+        "imprint": {**imprint, "score": None if imprint["similarity"] is None else round(imprint["similarity"], 3)},
     }
 
 

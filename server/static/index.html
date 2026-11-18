@@ -69,16 +69,7 @@
   .v-green { color: var(--green); border-color: #22c55e; background: var(--green-bg); }
   .v-amber { color: var(--amber); border-color: #f59e0b; background: var(--amber-bg); }
   .v-red { color: var(--red); border-color: #ef4444; background: var(--red-bg); }
-  .attrs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .attrs div { padding: 8px; text-align: center; border: 1px solid var(--line); border-radius: 10px; background: #f8fafc; font-size: .72rem; color: var(--sub); }
-  .attrs b { display: block; font-size: .92rem; color: var(--text); word-break: break-all; }
-  table { width: 100%; border-collapse: collapse; font-size: .8rem; }
-  th, td { padding: 7px 4px; border-bottom: 1px solid var(--line); text-align: center; }
-  th { font-size: .74rem; font-weight: 600; color: var(--sub); }
-  th:nth-child(2), td:nth-child(2) { text-align: left; }
-  td:nth-child(2) { font-weight: 600; }
   .tag { margin-left: 4px; padding: 1px 6px; border-radius: 6px; background: #e0e7ff; color: #4338ca; font-size: .7rem; }
-  .o { color: var(--green); font-weight: 700; } .x { color: var(--red); font-weight: 700; }
   .chip { padding: 2px 9px; border-radius: 99px; font-size: .75rem; font-weight: 700; }
   .chip.v-green { background: #dcfce7; } .chip.v-amber { background: #fef3c7; } .chip.v-red { background: #fee2e2; }
   .log { display: flex; gap: 12px; }
@@ -86,6 +77,57 @@
   .log .meta { font-size: .78rem; color: var(--sub); }
   .log .name { margin: 3px 0; font-weight: 700; }
   .empty { padding: 30px 0; text-align: center; color: var(--sub); }
+  /* 결과 카드 */
+  .pick { padding: 20px; }
+  .pick-head { display: flex; justify-content: space-between; align-items: center; font-size: .78rem; }
+  .eyebrow { color: #0e7490; font-weight: 700; }
+  .muted { color: var(--sub); }
+  .pick-top { display: flex; justify-content: space-between; gap: 14px; margin-top: 8px; }
+  .pick-top h3 { font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.25; word-break: keep-all; }
+  .pick-top .sub { margin-top: 4px; font-size: .85rem; color: var(--sub); }
+  .pick-top figure { flex-shrink: 0; text-align: center; }
+  .pick-top figure img { width: 104px; height: 78px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: #eee; }
+  .pick-top figcaption { font-size: .68rem; color: var(--sub); margin-top: 2px; }
+  .tag.rx { background: #dcfce7; color: var(--green); }
+  .tag.no { background: #fee2e2; color: var(--red); }
+  .pick .tags { margin-top: 8px; }
+  .pick .tags .tag { display: inline-block; margin: 0; padding: 3px 8px; font-size: .74rem; font-weight: 700; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0 14px; padding-bottom: 14px; border-bottom: 1px solid var(--line); font-size: .84rem; word-break: break-all; }
+  .facts small { display: block; font-size: .7rem; color: var(--sub); margin-bottom: 3px; }
+  .total { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .total b { font-size: 1rem; }
+  .total small { display: block; font-size: .72rem; color: var(--sub); margin-top: 3px; }
+  .big { font-size: 2.6rem; font-weight: 300; color: #0e7490; letter-spacing: .02em; }
+  .big span { font-size: 1.1rem; margin-left: 2px; }
+  .ev-head { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 0 2px; }
+  .ev-head b { font-size: 1.05rem; }
+  .ev-head small, .ev-sub { font-size: .72rem; color: var(--sub); }
+  .ev { margin-top: 10px; padding: 10px 12px; border-radius: 8px; }
+  .ev.first { border: 1px solid #0e7490; background: #ecfeff; }
+  .ev-row { display: flex; justify-content: space-between; align-items: center; }
+  .ev-row b { font-size: .95rem; }
+  .ev .num { display: inline-block; min-width: 24px; padding: 1px 5px; margin-right: 8px; border-radius: 4px; background: #f1f5f9; color: var(--sub); font-size: .72rem; text-align: center; font-family: ui-monospace, monospace; }
+  .ev.first .num { background: #0e7490; color: #fff; }
+  .ev .pc { font-size: .95rem; font-weight: 600; }
+  .ev .pc.bad { color: var(--red); }
+  .ev .detail { font-size: .76rem; color: var(--sub); margin: 3px 0 6px; }
+  .bar { height: 3px; background: #e2e8f0; border-radius: 2px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: #475569; }
+  .ev.first .bar i { background: #0e7490; }
+  .ev .bar i.bad { background: var(--red); }
+  .others-head { display: flex; justify-content: space-between; align-items: center; margin: 18px 0 6px; }
+  .others-head b { font-size: .95rem; }
+  .count { margin-left: 6px; padding: 1px 8px; border-radius: 4px; background: #f1f5f9; font-size: .74rem; color: var(--sub); }
+  .other { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 2px; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; font-family: inherit; cursor: pointer; }
+  .other:hover { background: #f8fafc; }
+  .other .nm { flex: 1; font-size: .88rem; font-weight: 600; }
+  .other .nm small { display: block; font-weight: 400; font-size: .72rem; color: var(--sub); margin-top: 2px; }
+  .other .sc { font-size: .9rem; color: var(--sub); white-space: nowrap; }
+  .other .chev { color: #94a3b8; }
+  .chips { display: flex; gap: 3px; margin-top: 3px; }
+  .chips span { font-size: .66rem; padding: 0 4px; border-radius: 3px; background: #dcfce7; color: var(--green); }
+  .chips span.n { background: #fee2e2; color: var(--red); }
+  .back { border: 0; background: none; color: #0e7490; font-size: .78rem; font-weight: 600; cursor: pointer; font-family: inherit; }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -130,8 +172,10 @@
 
   <div class="row">
     <input type="file" id="fileIn" accept="image/*" capture="environment" hidden>
-    <button class="btn plain" id="shootBtn">촬영 / 사진 선택</button>
-    <button class="btn" id="checkBtn" disabled>확인하기</button>
+    <input type="file" id="albumIn" accept="image/*" hidden>
+    <button class="btn plain" id="shootBtn">촬영</button>
+    <button class="btn plain" id="albumBtn">앨범</button>
+    <button class="btn" id="checkBtn" disabled style="flex:1.4">확인하기</button>
   </div>
 
   <div id="result" class="hidden" style="display:flex; flex-direction:column; gap:12px"></div>
@@ -328,7 +372,8 @@ function renderRx() {
 }
 
 $('shootBtn').onclick = () => $('fileIn').click();
-$('fileIn').onchange = e => {
+$('albumBtn').onclick = () => $('albumIn').click();
+$('fileIn').onchange = $('albumIn').onchange = e => {
   if (e.target.files[0]) openPhoto(e.target.files[0]);
   e.target.value = '';
 };
@@ -444,59 +489,112 @@ $('checkBtn').onclick = async () => {
   $('checkBtn').disabled = false;
 };
 
-const mark = ok => ok ? '<span class="o">O</span>' : '<span class="x">X</span>';
 const pct = p => Math.round(p * 100) + '%';
+const ATTRS = [['imprint', '각인'], ['color', '색상'], ['shape', '형상'], ['line', '분할선']];
+const shownResults = new Map();
 
-function resultHTML(r) {
+function splitName(name) {
+  const m = name.match(/^(.*?)\((.*)\)(.*)$/);
+  return m ? [m[1] + m[3], m[2]] : [name, ''];
+}
+
+function evidence(r, t) {
+  const m = t.match, a = r.attrs;
+  const dbImprint = [...m.imprint.catalog.front, ...m.imprint.catalog.back].join(' / ') || '없음';
+  return {
+    imprint: `검출 「${esc(a.imprint.text || '못 읽음')}」 · 기준 「${esc(dbImprint)}」`,
+    color: `검출 ${esc(a.color[0].label)} (${pct(a.color[0].probability)}) · 기준 ${esc(m.color.catalog)}`,
+    shape: `검출 ${esc(a.shape[0].label)} (${pct(a.shape[0].probability)}) · 기준 ${esc(m.shape.catalog)}`,
+    line: `검출 ${esc(a.line.label)} (유무 ${pct(a.line.presence_probability)}) · 기준 ${esc(m.line.catalog)}`,
+  };
+}
+
+function pickHTML(r, idx, imageId) {
+  const t = r.top_k[idx], m = t.match;
+  const [name, sub] = splitName(t.name);
+  const ev = evidence(r, t);
+  const rows = ATTRS.map(([k, label], n) => {
+    const s = m[k].score;
+    const bad = !m[k].ok;
+    const shown = s === undefined ? '-' : s === null ? '로고면' : (s * 100).toFixed(0) + '%';
+    return `
+      <div class="ev ${n === 0 ? 'first' : ''}">
+        <div class="ev-row"><span><span class="num">0${n + 1}</span><b>${label}</b></span><span class="pc ${bad ? 'bad' : ''}">${shown}</span></div>
+        <div class="detail">${ev[k]}${bad ? ' · 불일치' : ''}</div>
+        <div class="bar"><i class="${bad ? 'bad' : ''}" style="width:${s == null ? 50 : Math.round(s * 100)}%"></i></div>
+      </div>`;
+  }).join('');
+  const others = r.top_k.map((o, j) => {
+    if (j === idx) return '';
+    const miss = ATTRS.filter(([k]) => !o.match[k].ok).map(([, l]) => l);
+    return `
+      <button class="other" data-cand="${j}">
+        <span class="nm">${esc(splitName(o.name)[0])}${o.in_rx ? ' <span class="tag rx">처방</span>' : ''}
+          <small>후보 0${j + 1} · 검색 ${o.rank}위 · ${miss.length ? miss.join('·') + ' 불일치' : '모든 특징 일치'}</small>
+          <span class="chips">${ATTRS.map(([k, l]) => `<span class="${o.match[k].ok ? '' : 'n'}">${l}</span>`).join('')}</span>
+        </span>
+        <span class="sc">${(o.score * 100).toFixed(1)}%</span><span class="chev">›</span>
+      </button>`;
+  }).join('');
+  const box = r.bbox;
+  return `
+    <div class="card pick">
+      <div class="pick-head">
+        <span class="eyebrow">${idx === 0 ? (r.verdict === '판단 보류' ? '가장 가까운 후보 (판단 보류)' : '가장 유력한 의약품') : '비교 중인 후보'}</span>
+        <span class="muted">${idx === 0 ? '' : '<button class="back" data-cand="0">← 1순위로 </button> · '}후보 0${idx + 1}</span>
+      </div>
+      <div class="pick-top">
+        <div>
+          <h3>${esc(name)}</h3>
+          ${sub ? `<div class="sub">${esc(sub)}</div>` : ''}
+          <div class="tags">${t.in_rx ? '<span class="tag rx">오늘 처방에 있음</span>' : '<span class="tag no">오늘 처방에 없음</span>'}</div>
+        </div>
+        ${imageId && box ? `<figure><img src="/api/images/${imageId}/crop?x=${box[0]}&y=${box[1]}&w=${box[2]}&h=${box[3]}" alt=""><figcaption>촬영 사진</figcaption></figure>` : ''}
+      </div>
+      <div class="facts">
+        <div><small>품목코드</small>${t.item}</div>
+        <div><small>외형 (DB)</small>${esc(m.color.catalog)} · ${esc(m.shape.catalog)}</div>
+        <div><small>검색 순위</small>${t.rank}위</div>
+      </div>
+      <div class="total">
+        <div><b>종합 일치도</b><small>4가지 시각 특징을 합친 검색 점수 (확률 아님)</small></div>
+        <div class="big">${(t.score * 100).toFixed(1)}<span>%</span></div>
+      </div>
+      <div class="ev-head"><b>이 약으로 판단한 근거</b><small>특징별 일치도</small></div>
+      <div class="ev-sub">AI가 사진에서 읽은 값(검출)과 DB 기준을 비교했습니다.</div>
+      ${rows}
+      ${others ? `<div class="others-head"><span><b>다른 후보</b><span class="count">${r.top_k.length - 1}개</span></span><small class="muted">눌러서 비교</small></div>${others}` : ''}
+      ${r.search && !r.reasons[0]?.startsWith("각인 '") ? `<p class="hint" style="margin-top:12px">1·2위 점수 차 ${r.search.score_margin.toFixed(3)} (보류 기준 ${r.search.margin_threshold.toFixed(3)})</p>` : ''}
+    </div>`;
+}
+
+function resultHTML(r, imageId) {
   const v = VERDICT[r.verdict];
   const first = r.top_k[0];
+  const key = 'r' + shownResults.size;
+  shownResults.set(key, { r, imageId });
   let html = `
     <div class="verdict ${v.cls}">
-      <h2>${esc(r.verdict)}${first && r.verdict !== '판단 보류' ? ' · ' + esc(first.name) : ''}</h2>
+      <h2>${esc(r.verdict)}${first && r.verdict !== '판단 보류' ? ' · ' + esc(splitName(first.name)[0]) : ''}</h2>
       <p>${esc(r.reason)}. ${v.desc}</p>
       <ul>${r.reasons.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
     </div>`;
-  if (r.attrs) {
-    const a = r.attrs;
-    html += `
-      <div class="card">
-        <div class="title">AI가 읽은 속성</div>
-        <div class="attrs">
-          <div>각인<b>${esc(a.imprint.text || '못 읽음')}</b>&nbsp;</div>
-          <div>색<b>${esc(a.color[0].label)}</b>${pct(a.color[0].probability)}</div>
-          <div>모양<b>${esc(a.shape[0].label)}</b>${pct(a.shape[0].probability)}</div>
-          <div>분할선<b>${esc(a.line.label)}</b>유무 ${pct(a.line.presence_probability)}</div>
-        </div>
-      </div>`;
-  }
-  if (r.top_k.length) {
-    const rows = r.top_k.map((t, i) => {
-      const m = t.match;
-      const dbImprint = [...m.imprint.catalog.front, ...m.imprint.catalog.back].join(' / ');
-      return `<tr>
-        <td>${i + 1}</td>
-        <td>${esc(t.name)}${t.in_rx ? '<span class="tag">처방</span>' : ''}</td>
-        <td>${t.score.toFixed(3)}${t.rank > i + 1 ? `<br><small>(${t.rank}위)</small>` : ''}</td>
-        <td title="DB 각인: ${esc(dbImprint)}">${mark(m.imprint.ok)}</td>
-        <td>${mark(m.color.ok)}</td><td>${mark(m.shape.ok)}</td><td>${mark(m.line.ok)}</td>
-      </tr>`;
-    }).join('');
-    html += `
-      <div class="card">
-        <div class="title">DB 후보 Top-${r.top_k.length}와 속성별 일치</div>
-        <table>
-          <tr><th>#</th><th>약</th><th>점수</th><th>각인</th><th>색</th><th>모양</th><th>분할선</th></tr>
-          ${rows}
-        </table>
-        <p class="hint" style="margin-top:8px">1·2위 점수 차 ${r.search.score_margin.toFixed(3)} (보류 기준 ${r.search.margin_threshold.toFixed(3)}). 점수는 확률이 아닙니다.</p>
-      </div>`;
-  }
+  if (r.top_k.length && r.attrs) html += `<div data-result="${key}">${pickHTML(r, 0, imageId)}</div>`;
   return html;
 }
 
+// 다른 후보를 누르면 그 후보로 카드 내용을 바꾼다
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-cand]');
+  const holder = b && b.closest('[data-result]');
+  if (!holder) return;
+  const { r, imageId } = shownResults.get(holder.dataset.result);
+  holder.innerHTML = pickHTML(r, Number(b.dataset.cand), imageId);
+});
+
 function showResult(r) {
   const v = VERDICT[r.verdict];
-  draw(v.color, r.verdict === '판단 보류' ? '판단 보류' : r.top_k[0].name);
+  draw(v.color, r.verdict === '판단 보류' ? '판단 보류' : splitName(r.top_k[0].name)[0]);
 
   let buttons;
   if (r.verdict === '일치 후보') buttons = '<button class="btn green" data-act="administered">담당자 확인 후 투약</button>';
@@ -504,7 +602,7 @@ function showResult(r) {
   else buttons = '<button class="btn amber" data-act="queue">약사 확인 목록 보기</button>';
 
   const box = $('result');
-  box.innerHTML = resultHTML(r) + `<div class="row">${buttons}<button class="btn plain" data-act="again">다시 촬영</button></div>`;
+  box.innerHTML = resultHTML(r, r.image_id) + `<div class="row">${buttons}<button class="btn plain" data-act="again">다시 촬영</button></div>`;
   box.classList.remove('hidden');
   box.scrollIntoView({ behavior: 'smooth' });
 
@@ -545,7 +643,7 @@ function logCard(log, forPharmacist) {
     html += `
       <details style="margin-top:10px">
         <summary class="meta" style="cursor:pointer">AI 근거 보기</summary>
-        <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px">${resultHTML(log.result)}</div>
+        <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px">${resultHTML(log.result, log.image_id)}</div>
       </details>
       <div class="row" style="margin-top:10px">
         <button class="btn green sm" data-id="${log.id}" data-act="resolved_match">처방약 맞음</button>
