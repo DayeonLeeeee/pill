@@ -128,6 +128,9 @@
   .other .chev { color: #94a3b8; }
   .thumb svg { display: block; border-radius: 6px; border: 1px solid var(--line); }
   .back { border: 0; background: none; color: #0e7490; font-size: .78rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: 90vw; padding: 12px 18px; border-radius: 12px; background: #1e293b; color: #fff; font-size: .9rem; box-shadow: 0 6px 20px #0003; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 50; }
+  #toast.show { opacity: 1; }
+  #toast.err { background: var(--red); }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -150,6 +153,9 @@
     </div>
     <select id="patientSel"></select>
     <div id="rxList"></div>
+    <div id="newPatientBox" class="edit hidden">
+      <div class="line"><input id="newNameIn" placeholder="새 환자 이름 (예: 이영희 님 (308호))"><button class="ok-btn" id="newPatientOk">추가</button><button class="ok-btn" id="newPatientCancel">취소</button></div>
+    </div>
     <div id="editBox" class="edit hidden">
       <div class="line"><input id="nameIn" placeholder="환자 이름"><button class="ok-btn" id="saveNameBtn">이름 저장</button><button class="x-btn" id="delPatientBtn">환자 삭제</button></div>
       <div id="rxEdit"></div>
@@ -194,6 +200,7 @@
   <div id="queueList" style="display:flex; flex-direction:column; gap:10px"></div>
 </main>
 
+<div id="toast"></div>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
@@ -223,6 +230,17 @@ async function api(path, opts) {
 
 function post(path, data) {
   return api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+}
+
+// 알림은 화면 아래 메시지로 (일부 앱 내 브라우저는 alert·prompt·confirm 창을 막는다)
+let toastTimer;
+function toast(text, isError) {
+  const t = $('toast');
+  t.textContent = text;
+  t.classList.toggle('err', !!isError);
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
 function put(path, data) {
@@ -287,6 +305,17 @@ function selectPatient(id, keepPhoto) {
   if (!keepPhoto) resetPhoto();
   renderRx();
   renderEdit();
+  if (patient.id) syncGiven(patient.id);
+}
+
+// 오늘 '투약 완료'로 기록된 약은 새로고침해도 완료로 보이게
+async function syncGiven(id) {
+  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  const logs = await api('/api/logs?patient_id=' + id);
+  for (const l of logs) {
+    if (l.status === '투약 완료' && l.created_at.startsWith(today) && l.top1_item) given[id][l.top1_item] = true;
+  }
+  if (patient.id === id) renderRx();
 }
 
 // 환자·처방 수정
@@ -295,23 +324,45 @@ $('editBtn').onclick = () => {
   $('editBtn').textContent = $('editBox').classList.contains('hidden') ? '수정' : '닫기';
   renderEdit();
 };
-$('addPatientBtn').onclick = async () => {
-  const name = prompt('새 환자 이름 (예: 이영희 님 (308호))');
-  if (!name) return;
+$('addPatientBtn').onclick = () => {
+  $('newPatientBox').classList.toggle('hidden');
+  $('newNameIn').focus();
+};
+$('newPatientCancel').onclick = () => $('newPatientBox').classList.add('hidden');
+$('newNameIn').onkeydown = e => { if (e.key === 'Enter') $('newPatientOk').click(); };
+$('newPatientOk').onclick = async () => {
+  const name = $('newNameIn').value.trim();
+  if (!name) return toast('이름을 입력하세요', true);
   const { id } = await post('/api/patients', { name });
+  $('newNameIn').value = '';
+  $('newPatientBox').classList.add('hidden');
   await loadPatients(id);
   $('editBox').classList.remove('hidden');
   $('editBtn').textContent = '닫기';
   renderEdit();
+  toast(`[${name}] 환자를 추가했습니다. 아래에서 처방을 검색해 넣으세요.`);
 };
 $('saveNameBtn').onclick = async () => {
   await put(`/api/patients/${patient.id}`, { name: $('nameIn').value });
   await loadPatients(patient.id);
+  toast('이름을 저장했습니다');
 };
+// 삭제는 두 번 눌러야 한다 (확인 창 대신)
+let deleteArmed = null;
 $('delPatientBtn').onclick = async () => {
-  if (!confirm(`[${patient.name}] 환자를 삭제할까요? 처방도 같이 지워집니다. 확인 기록은 남습니다.`)) return;
+  const b = $('delPatientBtn');
+  if (deleteArmed !== patient.id) {
+    deleteArmed = patient.id;
+    b.textContent = '한 번 더 누르면 삭제';
+    setTimeout(() => { deleteArmed = null; b.textContent = '환자 삭제'; }, 4000);
+    return;
+  }
+  deleteArmed = null;
+  b.textContent = '환자 삭제';
+  const name = patient.name;
   await api(`/api/patients/${patient.id}`, { method: 'DELETE' });
   await loadPatients();
+  toast(`[${name}] 환자를 삭제했습니다. 확인 기록은 남아 있습니다.`);
 };
 
 function renderEdit() {
@@ -344,12 +395,13 @@ $('drugQ').oninput = () => {
       || '<div>검색 결과 없음</div>';
     $('hits').classList.remove('hidden');
     $('hits').querySelectorAll('[data-item]').forEach(el => el.onclick = async () => {
-      const label = prompt('표시 이름 (예: 혈압약 A). 비워도 됩니다.', '') ?? null;
-      if (label === null) return;
-      await post(`/api/patients/${patient.id}/rx`, { item: el.dataset.item, label });
+      await post(`/api/patients/${patient.id}/rx`, { item: el.dataset.item, label: '' });
       $('drugQ').value = '';
       $('hits').classList.add('hidden');
       await loadPatients(patient.id);
+      toast('처방에 넣었습니다. 필요하면 왼쪽 칸에 표시 이름(예: 혈압약 A)을 적으세요.');
+      const input = $('rxEdit').querySelector(`input[data-item="${el.dataset.item}"]`);
+      if (input) input.focus();
     });
   }, 250);
 };
@@ -405,7 +457,7 @@ async function openPhoto(file) {
     draw();
     $('checkBtn').disabled = false;
   } catch (e) {
-    alert('사진을 올리지 못했습니다: ' + e.message);
+    toast('사진을 올리지 못했습니다: ' + e.message, true);
   }
   setBusy(null);
 }
@@ -483,7 +535,7 @@ $('checkBtn').onclick = async () => {
     showResult(r);
     updateQueueCount();
   } catch (e) {
-    alert('확인하지 못했습니다: ' + e.message);
+    toast('확인하지 못했습니다: ' + e.message, true);
   }
   setBusy(null);
   $('checkBtn').disabled = false;
@@ -660,7 +712,7 @@ function showResult(r) {
     if (act === 'queue') return showTab('queue');
     await post(`/api/logs/${r.log_id}/action`, { action: act, actor: '간호사' });
     if (act === 'stopped') {
-      alert('투약을 중지하고 약사 확인 목록에 올렸습니다.');
+      toast('투약을 중지하고 약사 확인 목록에 올렸습니다.');
       return;
     }
     given[patient.id][r.top_k[0].item] = true;
@@ -668,14 +720,15 @@ function showResult(r) {
     renderRx();
     resetPhoto();
     const left = patient.rx.filter(x => !given[patient.id][x.item]).length;
-    alert(left ? `투약 기록을 저장했습니다. 남은 처방 ${left}알` : '오늘 처방을 모두 확인했습니다.');
+    toast(left ? `투약 기록을 저장했습니다. 남은 처방 ${left}알` : '오늘 처방을 모두 확인했습니다.');
   });
 }
 
 function logCard(log, forPharmacist) {
   const v = VERDICT[log.verdict];
   const first = log.result.top_k[0];
-  const history = log.actions.map(a => esc(`${a.at.slice(11, 16)} ${a.actor} ${a.action} ${a.note}`)).join('<br>');
+  const ACT = { administered: '투약 완료', stopped: '투약 중지', resolved_match: '처방약 맞음', resolved_mismatch: '처방약 아님(회수)', retake: '재촬영 요청' };
+  const history = log.actions.map(a => esc(`${a.at.slice(11, 16)} ${a.actor} ${ACT[a.action] || a.action}${a.note ? ' - ' + a.note : ''}`)).join('<br>');
   let html = `
     <div class="card">
       <div class="log">
@@ -693,6 +746,7 @@ function logCard(log, forPharmacist) {
         <summary class="meta" style="cursor:pointer">AI 근거 보기</summary>
         <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px">${resultHTML(log.result, log.image_id)}</div>
       </details>
+      <div class="edit" style="border:0; padding-top:0"><input class="note-in" placeholder="약사 메모 (선택)"></div>
       <div class="row" style="margin-top:10px">
         <button class="btn green sm" data-id="${log.id}" data-act="resolved_match">처방약 맞음</button>
         <button class="btn red sm" data-id="${log.id}" data-act="resolved_mismatch">처방약 아님(회수)</button>
@@ -712,8 +766,9 @@ async function loadQueue() {
   const queue = await api('/api/review_queue');
   $('queueList').innerHTML = queue.map(l => logCard(l, true)).join('') || '<p class="empty">확인할 건이 없습니다.</p>';
   $('queueList').querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
-    const note = b.dataset.act === 'resolved_mismatch' ? prompt('메모 (선택)') || '' : '';
+    const note = b.closest('.card').querySelector('.note-in')?.value.trim() || '';
     await post(`/api/logs/${b.dataset.id}/action`, { action: b.dataset.act, actor: '약사', note });
+    toast('처리했습니다. 확인 기록에 남았습니다.');
     loadQueue();
   });
   setQueueCount(queue.length);
