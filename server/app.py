@@ -14,7 +14,7 @@ from pathlib import Path
 
 import numpy as np
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from PIL import Image, ImageOps
 from pydantic import BaseModel
@@ -252,6 +252,18 @@ async def upload(image: UploadFile = File(...)):
 @app.get("/api/images/{image_id}")
 def get_image(image_id: str):
     return FileResponse(image_path(image_id))
+
+
+@app.get("/api/images/{image_id}/crop")
+def get_crop(image_id: str, x: int, y: int, w: int, h: int):
+    # 결과 화면용 알약 부분 (둘레 여백 조금)
+    im = Image.open(image_path(image_id))
+    pad = int(max(w, h) * 0.15)
+    crop = im.crop((max(0, x - pad), max(0, y - pad), min(im.width, x + w + pad), min(im.height, y + h + pad)))
+    crop.thumbnail((360, 360))
+    buf = io.BytesIO()
+    crop.save(buf, "JPEG", quality=88)
+    return Response(buf.getvalue(), media_type="image/jpeg")
 
 
 def run_model(path, bbox):
