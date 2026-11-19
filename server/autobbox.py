@@ -37,6 +37,9 @@ def find_pill(rgb):
         if score > best_score:
             best, best_score = (x, y, bw, bh), score
     if best is None:
+        # 흰 알약 + 흰 바탕 + 조명 얼룩이면 색 차이로는 못 찾음 -> 윤곽선으로
+        best = find_by_edges(img)
+    if best is None:
         return None
 
     x, y, bw, bh = (round(v / scale) for v in best)
@@ -46,6 +49,34 @@ def find_pill(rgb):
     if min(bw, bh) < 16:
         return None
     return [x, y, bw, bh]
+
+
+def find_by_edges(img):
+    h, w = img.shape[:2]
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)[..., 0]
+    grad = cv2.morphologyEx(gray, cv2.MORPH_GRADIENT, np.ones((3, 3), np.uint8))
+    hi = max(8, np.percentile(grad, 97))
+    edges = cv2.Canny(gray, hi * 0.5, hi)
+    edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9)))
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    best, best_score = None, 0
+    for c in contours:
+        x, y, bw, bh = cv2.boundingRect(c)
+        if x == 0 or y == 0 or x + bw >= w or y + bh >= h:
+            continue
+        hull = cv2.convexHull(c)
+        area = cv2.contourArea(hull)
+        if not 0.002 * h * w < area < 0.6 * h * w or max(bw, bh) > 4 * min(bw, bh):
+            continue
+        # 알약은 볼록하고 꽉 찬 모양
+        fill = area / (bw * bh)
+        if fill < 0.6:
+            continue
+        off = np.hypot(x + bw / 2 - w / 2, y + bh / 2 - h / 2) / np.hypot(w / 2, h / 2)
+        score = area * (1 - 0.7 * off)
+        if score > best_score:
+            best, best_score = (x, y, bw, bh), score
+    return best
 
 
 def snap_to_pill(rgb, bbox):
