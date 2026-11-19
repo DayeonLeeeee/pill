@@ -541,7 +541,7 @@ $('checkBtn').onclick = async () => {
   $('checkBtn').disabled = false;
 };
 
-const pct = p => Math.round(p * 100) + '%';
+const pct = p => Math.round(p * 100) + '점';
 const ATTRS = [['imprint', '각인'], ['color', '색상'], ['shape', '형상'], ['line', '분할선']];
 const shownResults = new Map();
 
@@ -555,8 +555,8 @@ function evidence(r, t) {
   const dbImprint = [...m.imprint.catalog.front, ...m.imprint.catalog.back].join(' / ') || '없음';
   return {
     imprint: `검출 「${esc(a.imprint.text || '못 읽음')}」 · 기준 「${esc(dbImprint)}」`,
-    color: `검출 ${esc(a.color[0].label)} (${pct(a.color[0].probability)}) · 기준 ${esc(m.color.catalog)}`,
-    shape: `검출 ${esc(a.shape[0].label)} (${pct(a.shape[0].probability)}) · 기준 ${esc(m.shape.catalog)}`,
+    color: `검출 ${esc(a.color[0].label)} (확신 ${pct(a.color[0].probability)}) · 기준 ${esc(m.color.catalog)}`,
+    shape: `검출 ${esc(a.shape[0].label)} (확신 ${pct(a.shape[0].probability)}) · 기준 ${esc(m.shape.catalog)}`,
     line: `검출 ${esc(a.line.label)} (유무 ${pct(a.line.presence_probability)}) · 기준 ${esc(m.line.catalog)}`,
   };
 }
@@ -611,7 +611,7 @@ function pickHTML(r, idx, imageId) {
   const rows = ATTRS.map(([k, label], n) => {
     const s = m[k].score;
     const bad = !m[k].ok;
-    const shown = s === undefined ? '-' : s === null ? '로고면' : (s * 100).toFixed(0) + '%';
+    const shown = s === undefined ? '-' : s === null ? '로고면' : (s * 100).toFixed(0) + '점';
     return `
       <div class="ev ${n === 0 ? 'first' : ''}">
         <div class="ev-row"><span><span class="num">0${n + 1}</span><b>${label}</b></span><span class="pc ${bad ? 'bad' : ''}">${shown}</span></div>
@@ -627,7 +627,7 @@ function pickHTML(r, idx, imageId) {
         <span class="nm">${esc(splitName(o.name)[0])}${o.in_rx ? ' <span class="tag rx">처방</span>' : ''}
           <small>후보 0${j + 1} · ${similarity(o)}</small>
         </span>
-        <span class="sc">${(o.score * 100).toFixed(1)}%</span><span class="chev">›</span>
+        <span class="sc">${(o.score * 100).toFixed(1)}점</span><span class="chev">›</span>
       </button>`;
   }).join('');
   const box = r.bbox;
@@ -654,10 +654,10 @@ function pickHTML(r, idx, imageId) {
         <div><small>검색 순위</small>${t.rank}위</div>
       </div>
       <div class="total">
-        <div><b>종합 일치도</b><small>4가지 시각 특징을 합친 검색 점수 (확률 아님)</small></div>
-        <div class="big">${(t.score * 100).toFixed(1)}<span>%</span></div>
+        <div><b>종합 일치도</b><small>4가지 시각 특징을 합친 점수 (100점 만점)</small></div>
+        <div class="big">${(t.score * 100).toFixed(1)}<span>점</span></div>
       </div>
-      <div class="ev-head"><b>이 약으로 판단한 근거</b><small>특징별 일치도</small></div>
+      <div class="ev-head"><b>이 약으로 판단한 근거</b><small>특징별 점수 (100점 만점)</small></div>
       <div class="ev-sub">AI가 사진에서 읽은 값(검출)과 DB 기준을 비교했습니다.</div>
       ${rows}
       ${others ? `<div class="others-head"><span><b>다른 후보</b><span class="count">${r.top_k.length - 1}개</span></span><small class="muted">선택하여 비교</small></div>${others}` : ''}
