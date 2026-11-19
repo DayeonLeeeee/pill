@@ -37,8 +37,11 @@ def find_pill(rgb):
         if score > best_score:
             best, best_score = (x, y, bw, bh), score
     if best is None:
-        # 흰 알약 + 흰 바탕 + 조명 얼룩이면 색 차이로는 못 찾음
-        best = find_bright_blob(img) or find_by_edges(img)
+        # 흰 알약 + 흰 바탕 + 조명 얼룩이면 색 차이로는 못 찾음.
+        # 손바닥 위처럼 바탕도 밝으면 밝기로는 못 찾고 윤곽으로만 잡혀서 둘 다 보고 고름
+        found = [c for c in (find_bright_blob(img), find_by_edges(img)) if c]
+        if found:
+            best = max(found, key=lambda c: c[1])[0]
     if best is None:
         return None
 
@@ -79,7 +82,7 @@ def find_bright_blob(img):
         score = area * solidity * (1 - off) ** 2
         if score > best_score:
             best, best_score = (x, y, bw, bh), score
-    return best
+    return best and (best, best_score)
 
 
 def find_by_edges(img):
@@ -99,15 +102,21 @@ def find_by_edges(img):
         area = cv2.contourArea(hull)
         if not 0.002 * h * w < area < 0.6 * h * w or max(bw, bh) > 4 * min(bw, bh):
             continue
+        # 조명 얼룩은 테두리가 흐릿함. 알약 테두리는 또렷함
+        ring = np.zeros_like(gray)
+        cv2.drawContours(ring, [hull], -1, 255, 3)
+        if grad[ring > 0].mean() < 5:
+            continue
         # 알약은 볼록하고 꽉 찬 모양
         fill = area / (bw * bh)
         if fill < 0.6:
             continue
+        solidity = cv2.contourArea(c) / max(area, 1)
         off = np.hypot(x + bw / 2 - w / 2, y + bh / 2 - h / 2) / np.hypot(w / 2, h / 2)
-        score = area * (1 - off) ** 2
+        score = area * solidity * (1 - off) ** 2
         if score > best_score:
             best, best_score = (x, y, bw, bh), score
-    return best
+    return best and (best, best_score)
 
 
 def snap_to_pill(rgb, bbox):
