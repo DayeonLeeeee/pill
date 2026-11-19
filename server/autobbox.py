@@ -37,6 +37,9 @@ def find_pill(rgb):
         if score > best_score:
             best, best_score = (x, y, bw, bh), score
     if best is None:
+        # 흰 알약 + 흰 바탕 + 조명 얼룩이면 색 차이로는 못 찾음
+        best = find_bright_blob(img) or find_by_edges(img)
+    if best is None:
         return None
 
     x, y, bw, bh = (round(v / scale) for v in best)
@@ -46,6 +49,65 @@ def find_pill(rgb):
     if min(bw, bh) < 16:
         return None
     return [x, y, bw, bh]
+
+
+def find_bright_blob(img):
+    # 주변보다 밝은 덩어리 (조명 얼룩은 큰 블러로 빼냄)
+    h, w = img.shape[:2]
+    L = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)[..., 0].astype(np.float32)
+    res = L - cv2.GaussianBlur(L, (0, 0), min(h, w) / 10)
+    mad = np.median(np.abs(res - np.median(res))) + 1e-6
+    mask = (res > max(6, 4 * mad)).astype(np.uint8) * 255
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, k, iterations=2)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, k)
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    best, best_score = None, 0
+    for c in contours:
+        x, y, bw, bh = cv2.boundingRect(c)
+        if x == 0 or y == 0 or x + bw >= w or y + bh >= h:
+            continue
+        area = cv2.contourArea(cv2.convexHull(c))
+        if not 0.001 * h * w < area < 0.25 * h * w or max(bw, bh) > 4 * min(bw, bh):
+            continue
+        # 글자·그림자 때문에 윤곽이 울퉁불퉁할 수 있어서 solidity는 느슨하게
+        solidity = cv2.contourArea(c) / max(area, 1)
+        if area / (bw * bh) < 0.6 or solidity < 0.4:
+            continue
+        # 가운데에서 멀면 크게 깎음 (가장자리 물건 경계가 잘 잡힘)
+        off = np.hypot(x + bw / 2 - w / 2, y + bh / 2 - h / 2) / np.hypot(w / 2, h / 2)
+        score = area * solidity * (1 - off) ** 2
+        if score > best_score:
+            best, best_score = (x, y, bw, bh), score
+    return best
+
+
+def find_by_edges(img):
+    h, w = img.shape[:2]
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)[..., 0]
+    grad = cv2.morphologyEx(gray, cv2.MORPH_GRADIENT, np.ones((3, 3), np.uint8))
+    hi = max(8, np.percentile(grad, 97))
+    edges = cv2.Canny(gray, hi * 0.5, hi)
+    edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9)))
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    best, best_score = None, 0
+    for c in contours:
+        x, y, bw, bh = cv2.boundingRect(c)
+        if x == 0 or y == 0 or x + bw >= w or y + bh >= h:
+            continue
+        hull = cv2.convexHull(c)
+        area = cv2.contourArea(hull)
+        if not 0.002 * h * w < area < 0.6 * h * w or max(bw, bh) > 4 * min(bw, bh):
+            continue
+        # 알약은 볼록하고 꽉 찬 모양
+        fill = area / (bw * bh)
+        if fill < 0.6:
+            continue
+        off = np.hypot(x + bw / 2 - w / 2, y + bh / 2 - h / 2) / np.hypot(w / 2, h / 2)
+        score = area * (1 - off) ** 2
+        if score > best_score:
+            best, best_score = (x, y, bw, bh), score
+    return best
 
 
 def snap_to_pill(rgb, bbox):
