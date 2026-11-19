@@ -7,6 +7,11 @@ def find_pill(rgb):
     scale = 512 / max(H, W)
     img = cv2.resize(rgb, (round(W * scale), round(H * scale)), interpolation=cv2.INTER_AREA)
     img = cv2.GaussianBlur(img, (5, 5), 0)
+    # 손에 올려 찍은 사진은 피부 사이에 뚫린 구멍을 찾는 게 제일 정확함
+    best = find_on_skin(img)
+    if best is not None:
+        return to_original(best, scale, W, H)
+
     lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB).astype(np.float32)
     h, w = lab.shape[:2]
 
@@ -44,14 +49,52 @@ def find_pill(rgb):
             best = max(found, key=lambda c: c[1])[0]
     if best is None:
         return None
+    return to_original(best, scale, W, H)
 
-    x, y, bw, bh = (round(v / scale) for v in best)
+
+def to_original(box, scale, W, H):
+    x, y, bw, bh = (round(v / scale) for v in box)
     pad = round(0.06 * max(bw, bh))
     x, y = max(0, x - pad), max(0, y - pad)
     bw, bh = min(bw + 2 * pad, W - x), min(bh + 2 * pad, H - y)
     if min(bw, bh) < 16:
         return None
     return [x, y, bw, bh]
+
+
+def find_on_skin(img):
+    h, w = img.shape[:2]
+    skin = cv2.inRange(cv2.cvtColor(img, cv2.COLOR_RGB2YCrCb), (40, 135, 80), (255, 180, 135))
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    skin = cv2.morphologyEx(skin, cv2.MORPH_OPEN, k)
+    if skin.mean() / 255 < 0.15:
+        return None
+    # 나무 책상도 피부색으로 잡힘. 나뭇결이 있어서 피부보다 훨씬 거칠다
+    Y = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY).astype(np.float32)
+    if np.median(np.abs(Y - cv2.GaussianBlur(Y, (0, 0), 3))[skin > 0]) > 1.5:
+        return None
+    other = cv2.morphologyEx(cv2.bitwise_not(skin), cv2.MORPH_OPEN, k)
+    n, labels, stats, centers = cv2.connectedComponentsWithStats(other)
+    ring_k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+    best, best_score = None, 0
+    for i in range(1, n):
+        x, y, bw, bh, area = stats[i]
+        if x == 0 or y == 0 or x + bw >= w or y + bh >= h:
+            continue
+        if not 0.002 * h * w < area < 0.25 * h * w or max(bw, bh) > 3 * min(bw, bh):
+            continue
+        blob = (labels == i).astype(np.uint8)
+        contour = cv2.findContours(blob, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0][0]
+        solidity = area / max(cv2.contourArea(cv2.convexHull(contour)), 1)
+        # 둘레가 거의 다 피부여야 손 위에 놓인 것
+        ring = cv2.dilate(blob, ring_k) - blob
+        if solidity < 0.8 or skin[ring > 0].mean() / 255 < 0.7:
+            continue
+        off = np.hypot(centers[i][0] - w / 2, centers[i][1] - h / 2) / np.hypot(w / 2, h / 2)
+        score = area * solidity * (1 - off) ** 2
+        if score > best_score:
+            best, best_score = (x, y, bw, bh), score
+    return best
 
 
 def find_bright_blob(img):
